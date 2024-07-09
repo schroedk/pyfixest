@@ -1305,7 +1305,7 @@ class Feols:
                 effect.
             """
             c_pattern = r"C\((.+?)\)"
-            t_pattern = r"\[T\.(.*\])"
+            t_pattern = r"\[T\.(.*?)\]"
             c_match = re.search(c_pattern, fe_string)
             t_match = re.search(t_pattern, fe_string, re.DOTALL)
 
@@ -1431,13 +1431,12 @@ class Feols:
 
                 # populate matrix with fixed effects estimates
                 fixef_mat = np.zeros((newdata.shape[0], len(fvals)))
-                # fixef_mat = np.full((newdata.shape[0], len(fvals)), np.nan)
 
                 for i, fixef in enumerate(df_fe.columns):
                     new_levels = df_fe[fixef].unique()
                     old_levels = _data[fixef].unique().astype(str)
                     subdict = self._fixef_dict[
-                        f"C({fixef})"
+                        f"{fixef}"
                     ]  # as variables are called C(var) in the fixef_dict
 
                     for level in new_levels:

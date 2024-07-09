@@ -290,3 +290,18 @@ def test_categorical_covariate_predict():
     )
 
     np.testing.assert_allclose(py_predict, r_predict, rtol=1e-08, atol=1e-08)
+
+
+def test_escape_fixef():
+    data = get_data()
+    data["f4"] = np.random.choice(
+        ['[\n "web", "ios" \n]', '[\n "web", "android" \n]'], size=data.shape[0]
+    )
+
+    fit1 = feols("Y ~ X1 | f4", data=data)
+    yhat1 = fit1.predict(newdata=data.iloc[:100, :])
+
+    fit2 = feols("Y ~ X1 + C(f4)", data=data)
+    yhat2 = fit2.predict(newdata=data.iloc[:100, :])
+
+    assert np.allclose(yhat1[0:5], yhat2[0:5])
