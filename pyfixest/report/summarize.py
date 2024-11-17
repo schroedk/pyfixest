@@ -1,4 +1,5 @@
 import re
+from collections.abc import ValuesView
 from typing import Optional, Union
 
 import numpy as np
@@ -569,13 +570,14 @@ def _post_processing_input_checks(
         TypeError: If the models argument is not of the expected type.
 
     """
+    # import pdb; pdb.set_trace()
     models_list: list[Union[Feols, Fepois, Feiv]] = []
 
     if isinstance(models, (Feols, Fepois, Feiv)):
         models_list = [models]
     elif isinstance(models, FixestMulti):
         models_list = models.to_list()
-    elif isinstance(models, list):
+    elif isinstance(models, (list, ValuesView)):
         if all(isinstance(m, (Feols, Fepois, Feiv)) for m in models):
             models_list = models
         else:
