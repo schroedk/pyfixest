@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.33">
+<meta name="generator" content="quarto-1.8.24">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -58,7 +58,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="../site_libs/quarto-nav/headroom.min.js"></script>
 <script src="../site_libs/clipboard/clipboard.min.js"></script>
 <script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
@@ -67,14 +67,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <meta name="quarto:offset" content="../">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6ef52b30d4130b5a8a6bc02bcd7e7872.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-19c6f25d9c793ca7e0d0ad6a6391bd12.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -102,7 +103,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
@@ -115,6 +116,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -187,8 +192,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">PyFixest on the GPU</span></a>
   </li>  
         <li>
+    <a class="dropdown-item" href="../resources.html">
+ <span class="dropdown-text">Other Resources around PyFixest</span></a>
+  </li>  
+        <li>
     <a class="dropdown-item" href="../replicating-the-effect.html">
  <span class="dropdown-text">Replicating ‘The Effect’ with PyFixest</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../mixtape.html">
+ <span class="dropdown-text">Replicating ‘The Mixtape’ with PyFixest</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../brave_true.html">
+ <span class="dropdown-text">Replicating ‘Causal Inference for the Brave and True’ with PyFixest</span></a>
   </li>  
     </ul>
   </li>
@@ -220,6 +237,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../index.html" class="sidebar-logo-link">
+      </a>
+      </div>
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
@@ -253,6 +274,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../reference/estimation.estimation.feglm.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">estimation.estimation.feglm</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/estimation.estimation.quantreg.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">estimation.estimation.quantreg</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -456,7 +483,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>report.coefplot(</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>report.coefplot(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    models,</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.05</span>,</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    figsize<span class="op">=</span><span class="va">None</span>,</span>
@@ -474,7 +501,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    rename_models<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Plot model coefficients with confidence intervals.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
@@ -614,8 +641,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div id="fc401d49" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<div id="ae9341f6" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pf.get_data()</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>fit1 <span class="op">=</span> pf.feols(<span class="st">"Y ~ i(f1)"</span>, data <span class="op">=</span> df)</span>
@@ -639,10 +666,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Y~i(f1)+X2|f1"</span>: <span class="st">"Model 3"</span></span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    },</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>pf.iplot([fit1], joint <span class="op">=</span> <span class="st">"both"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>pf.iplot([fit1], joint <span class="op">=</span> <span class="st">"both"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 
-            <div id="GJ1Fkv"></div>
+            <div id="IQQWtn"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -666,9 +693,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("GJ1Fkv").appendChild(div);
+                        document.getElementById("IQQWtn").appendChild(div);
                     };
-                    var e = document.getElementById("GJ1Fkv");
+                    var e = document.getElementById("IQQWtn");
                     e.appendChild(script);
                 })()
             </script>
@@ -676,7 +703,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-display">
 
-            <div id="1lSDTI"></div>
+            <div id="xoOwvf"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -700,16 +727,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("1lSDTI").appendChild(div);
+                        document.getElementById("xoOwvf").appendChild(div);
                     };
-                    var e = document.getElementById("1lSDTI");
+                    var e = document.getElementById("xoOwvf");
                     e.appendChild(script);
                 })()
             </script>
             
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:2759: UserWarning: 
+<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:2765: UserWarning: 
             29 variables dropped due to multicollinearity.
             The following variables are dropped: 
     C(f1)[T.1.0]
@@ -722,7 +749,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   warnings.warn(</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="1">
-   <div id="tSkFgY"></div>
+   <div id="xwM5oS"></div>
    <script type="text/javascript" data-lets-plot-script="plot">
    
    (function() {
@@ -747,7 +774,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
        };
    }
    
-   const containerDiv = document.getElementById("tSkFgY");
+   const containerDiv = document.getElementById("xwM5oS");
    let fig = null;
    
    function renderPlot() {
@@ -756,8 +783,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 "data":{
 "Coefficient":["C(f1)[T.1.0]","C(f1)[T.2.0]","C(f1)[T.3.0]","C(f1)[T.4.0]","C(f1)[T.5.0]","C(f1)[T.6.0]","C(f1)[T.7.0]","C(f1)[T.8.0]","C(f1)[T.9.0]","C(f1)[T.10.0]","C(f1)[T.11.0]","C(f1)[T.12.0]","C(f1)[T.13.0]","C(f1)[T.14.0]","C(f1)[T.15.0]","C(f1)[T.16.0]","C(f1)[T.17.0]","C(f1)[T.18.0]","C(f1)[T.19.0]","C(f1)[T.20.0]","C(f1)[T.21.0]","C(f1)[T.22.0]","C(f1)[T.23.0]","C(f1)[T.24.0]","C(f1)[T.25.0]","C(f1)[T.26.0]","C(f1)[T.27.0]","C(f1)[T.28.0]","C(f1)[T.29.0]","C(f1)[T.1.0]","C(f1)[T.2.0]","C(f1)[T.3.0]","C(f1)[T.4.0]","C(f1)[T.5.0]","C(f1)[T.6.0]","C(f1)[T.7.0]","C(f1)[T.8.0]","C(f1)[T.9.0]","C(f1)[T.10.0]","C(f1)[T.11.0]","C(f1)[T.12.0]","C(f1)[T.13.0]","C(f1)[T.14.0]","C(f1)[T.15.0]","C(f1)[T.16.0]","C(f1)[T.17.0]","C(f1)[T.18.0]","C(f1)[T.19.0]","C(f1)[T.20.0]","C(f1)[T.21.0]","C(f1)[T.22.0]","C(f1)[T.23.0]","C(f1)[T.24.0]","C(f1)[T.25.0]","C(f1)[T.26.0]","C(f1)[T.27.0]","C(f1)[T.28.0]","C(f1)[T.29.0]"],
 "Estimate":[2.5442879837380556,-1.6346807837677435,-0.4639805415936472,-1.7627122198272636,1.4348086119364796,-0.8992225420858178,0.890191696353664,-0.470811979425131,0.08392895661938211,0.28878174380848437,1.2881639264088722,0.6873080715508435,1.804300973899593,-0.2165668418938769,1.3903698819526813,2.240478065436785,-0.3263697830683047,1.6520823541202092,0.5883570616384419,2.7916074868998466,-1.4464082114876389,-1.0659170994410558,-0.548090534683836,-0.977560174083431,-1.7019175178822936,1.0750127541094736,-0.48200420903080166,1.5173786526283053,0.21151214409505403,2.5442879837380556,-1.6346807837677435,-0.4639805415936472,-1.7627122198272636,1.4348086119364796,-0.8992225420858178,0.890191696353664,-0.470811979425131,0.08392895661938211,0.28878174380848437,1.2881639264088722,0.6873080715508435,1.804300973899593,-0.2165668418938769,1.3903698819526813,2.240478065436785,-0.3263697830683047,1.6520823541202092,0.5883570616384419,2.7916074868998466,-1.4464082114876389,-1.0659170994410558,-0.548090534683836,-0.977560174083431,-1.7019175178822936,1.0750127541094736,-0.48200420903080166,1.5173786526283053,0.21151214409505403],
-"2.5%":[1.6988810797044178,-2.521351025022357,-1.377939306539814,-2.655693360946177,0.4770952921754975,-1.8291701365228197,-0.009423320741524965,-1.3574822206797448,-0.796729891653331,-0.5978884974461296,0.388548909313683,-0.24263952288615853,0.8825710451114392,-1.155219283789314,0.4604222875156794,1.353807824182171,-1.274260142446293,0.759101213001296,-0.3415905327985601,1.9622034224441072,-2.3393893526065526,-1.9301363487581429,-1.5394180012195635,-1.8771751911786199,-2.70609209657718,0.11729943434849133,-1.4119518034678036,0.6675596211308417,-0.7363782152829341,1.2328026729675232,-3.010178181949059,-1.8818108067096069,-3.147999758626408,-0.05089838288814952,-2.3418563839334037,-0.5053870180377875,-1.8463093776064463,-1.2822429279478191,-1.0867156543728314,-0.10741478798257975,-0.7553257702967424,0.37441525101799455,-1.6727045710645567,-0.05226395989490462,0.8649806672554692,-1.7968383546092925,0.2667948153210651,-0.854276780209144,1.5049474868014827,-2.8316957502867837,-2.4065861256303647,-2.085943377287595,-2.3731388884748825,-3.2597001703825272,-0.4106942407151557,-1.9246380508783876,0.1990487793986231,-1.2589564274459337],
-"97.5%":[3.3896948877716935,-0.7480105425131297,0.4499782233525196,-0.8697310787083502,2.3925219316974617,0.03072505235118428,1.789806713448853,0.4158582618294828,0.9645878048920953,1.1754519850630982,2.1877789435040613,1.6172556659878454,2.7260309026877465,0.7220856000015603,2.3203174763896834,3.1271483066913985,0.6215205763096834,2.5450634952391225,1.5183046560754438,3.6210115513555863,-0.5534270703687254,-0.2016978501239689,0.4432369318518916,-0.077945156988242,-0.6977429391874075,2.032726073870456,0.4479433854062004,2.367197684125769,1.1594025034730422,3.8557732945085883,-0.25918338558642806,0.9538497235223123,-0.3774246810281192,2.920515606761109,0.5434112997617682,2.2857704107451156,0.9046854187561845,1.4501008411865834,1.6642791419898,2.6837426408003244,2.1299419133984294,3.234186696781191,1.239570887276803,2.8330037238002674,3.6159754636181005,1.144098788472683,3.0373698929193536,2.030990903486028,4.078267486998211,-0.061120672688494304,0.274751926748253,0.9897623079199228,0.41801854030802055,-0.14413486538206,2.560719748934103,0.9606296328167843,2.8357085258579877,1.6819807156360418],
+"2.5%":[1.6988810797044178,-2.521351025022357,-1.377939306539814,-2.655693360946177,0.4770952921754975,-1.8291701365228197,-0.009423320741524965,-1.3574822206797448,-0.796729891653331,-0.5978884974461296,0.388548909313683,-0.24263952288615853,0.8825710451114392,-1.155219283789314,0.4604222875156794,1.353807824182171,-1.274260142446293,0.759101213001296,-0.3415905327985601,1.9622034224441072,-2.3393893526065526,-1.9301363487581429,-1.5394180012195635,-1.8771751911786199,-2.70609209657718,0.11729943434849133,-1.4119518034678036,0.6675596211308417,-0.7363782152829341,1.2530198521868607,-2.988974225498776,-1.8599542686782287,-3.126644882432055,-0.02799549229904663,-2.3196174867921324,-0.48387349840334504,-1.8251054211561635,-1.2611827287920332,-1.0655116979225485,-0.08590126834813727,-0.7330868731554712,0.3964576297509175,-1.6502575049808454,-0.030025062753633147,0.886184623705752,-1.7741703716718542,0.288149691515418,-0.8320378830678727,1.5247819718717412,-2.8103408740924305,-2.3859190653486455,-2.062236633280206,-2.3516253688404403,-3.235686198733948,-0.38779135012605304,-1.9023991537371163,0.21937147085265996,-1.2362884445084954],
+"97.5%":[3.3896948877716935,-0.7480105425131297,0.4499782233525196,-0.8697310787083502,2.3925219316974617,0.03072505235118428,1.789806713448853,0.4158582618294828,0.9645878048920953,1.1754519850630982,2.1877789435040613,1.6172556659878454,2.7260309026877465,0.7220856000015603,2.3203174763896834,3.1271483066913985,0.6215205763096834,2.5450634952391225,1.5183046560754438,3.6210115513555863,-0.5534270703687254,-0.2016978501239689,0.4432369318518916,-0.077945156988242,-0.6977429391874075,2.032726073870456,0.4479433854062004,2.367197684125769,1.1594025034730422,3.8355561152892506,-0.2803873420367109,0.9319931854909341,-0.39877955722247216,2.8976127161720058,0.5211724026204969,2.264256891110673,0.8834814623059016,1.4290406420307975,1.6430751855395171,2.6622291211658817,2.107703016257158,3.2121443180482685,1.2171238211930917,2.8107648266589957,3.5947715071678177,1.1214308055352447,3.0160150167250004,2.0087520063447566,4.058433001927952,-0.08247554888284725,0.25408486646653383,0.966055563912534,0.39650502067357807,-0.16814883703063965,2.5378168583450003,0.938390735675513,2.8153858344039504,1.6593127326986035],
 "Model":["Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)","Y~i(f1) (joint CIs)"]
 },
 "mapping":{
@@ -949,13 +976,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
