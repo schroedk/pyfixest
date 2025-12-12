@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.24">
+<meta name="generator" content="quarto-1.8.25">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-19c6f25d9c793ca7e0d0ad6a6391bd12.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-b9c55ee423fe9b09b80369c068559168.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -180,16 +180,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Quantile Regression</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./compare-fixest-pyfixest.html">
- <span class="dropdown-text">Compare fixest &amp; PyFixest</span></a>
-  </li>  
-        <li>
     <a class="dropdown-item" href="./stata-2-pyfixest.html">
  <span class="dropdown-text">Compare Stata &amp; PyFixest</span></a>
   </li>  
         <li>
+    <a class="dropdown-item" href="./pyfixest-gpu-cupy.html">
+ <span class="dropdown-text">PyFixest on the GPU via CuPy</span></a>
+  </li>  
+        <li>
     <a class="dropdown-item" href="./pyfixest_gpu.html">
- <span class="dropdown-text">PyFixest on the GPU</span></a>
+ <span class="dropdown-text">PyFixest on the GPU via JAX</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./resources.html">
@@ -250,7 +250,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div id="e4293050" class="cell" data-execution_count="1">
+<div id="61423f67" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.report.utils <span class="im">import</span> rename_categoricals</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -261,7 +261,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>fit3 <span class="op">=</span> pf.feols(<span class="st">"Y ~ X1 + X2 | f1"</span>, data <span class="op">=</span> df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 
-            <div id="S5HtTX"></div>
+            <div id="A9ZRFt"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -272,7 +272,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                 (function() {
                     var script = document.createElement("script");
                     script.type = "text/javascript";
-                    script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.6.2/js-package/distr/lets-plot.min.js";
+                    script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.7.3/js-package/distr/lets-plot.min.js";
                     script.onload = function() {
                         window.letsPlotCall = function(f) {f();};
                         window.letsPlotCallQueue.forEach(function(f) {f();});
@@ -285,9 +285,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("S5HtTX").appendChild(div);
+                        document.getElementById("A9ZRFt").appendChild(div);
                     };
-                    var e = document.getElementById("S5HtTX");
+                    var e = document.getElementById("A9ZRFt");
                     e.appendChild(script);
                 })()
             </script>
@@ -295,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-display">
 
-            <div id="76CTCt"></div>
+            <div id="19fZ0t"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -306,7 +306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                 (function() {
                     var script = document.createElement("script");
                     script.type = "text/javascript";
-                    script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.6.2/js-package/distr/lets-plot.min.js";
+                    script.src = "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v4.7.3/js-package/distr/lets-plot.min.js";
                     script.onload = function() {
                         window.letsPlotCall = function(f) {f();};
                         window.letsPlotCallQueue.forEach(function(f) {f();});
@@ -319,25 +319,75 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("76CTCt").appendChild(div);
+                        document.getElementById("19fZ0t").appendChild(div);
                     };
-                    var e = document.getElementById("76CTCt");
+                    var e = document.getElementById("19fZ0t");
                     e.appendChild(script);
                 })()
             </script>
             
 </div>
 </div>
-<section id="pyfixest-0.31.0-in-dev-install-from-github" class="level2">
-<h2 class="anchored" data-anchor-id="pyfixest-0.31.0-in-dev-install-from-github">PyFixest 0.31.0 (In Dev, Install from Github)</h2>
+<section id="pyfixest-0.41.0-in-development" class="level2">
+<h2 class="anchored" data-anchor-id="pyfixest-0.41.0-in-development">PyFixest 0.41.0 (In Development)</h2>
+<ul>
+<li>Adds the following statistics to the <code>Fepois</code> class: <code>_loglik</code>, <code>_loglik_null</code>, <code>_pseudo_r2</code>.</li>
+<li>Set the default parameters for the MAP algorithm to a tolerance of <code>1e-06</code> and maximum number of iterations of <code>10_000</code>.</li>
+</ul>
+</section>
+<section id="pyfixest-0.40.1" class="level2">
+<h2 class="anchored" data-anchor-id="pyfixest-0.40.1">PyFixest 0.40.1</h2>
+<section id="breaking-changes-for-compatibility-with-fixest-0.13" class="level3">
+<h3 class="anchored" data-anchor-id="breaking-changes-for-compatibility-with-fixest-0.13">Breaking Changes for compatibility with <code>fixest</code> 0.13</h3>
+<p><code>fixest</code> 0.13 has recently been released to CRAN, with a range of breaking changes. We are following these in pyfixet 0.40.0.</p>
+<ul>
+<li>The default inference method is now always “iid”. Before, both <code>fixest</code> and <code>pyfixest</code> would default to cluster by the first fixest effect in the presence of fixed effect.</li>
+<li>The arguments of the <code>pf.ssc()</code> functions have been renamed: <code>adj</code> becomes <code>k_adj</code>, <code>fixef_k</code> becomes <code>k_fixef</code>, <code>cluster_df</code> becomes <code>G_df</code>, and <code>cluster_adj</code> becomes <code>G_adj</code>. Backwards compatibility is ensured.</li>
+<li><code>fixest</code> no longer applies the <code>G/(G-1)</code> small sample correction for heteroskedastic errors. The argument is now only relevant for cluster robust errors.</li>
+<li>If the <code>k_adj</code> arg is set to <code>True</code> with heteroskedastic errors, the applied small sample correction now is <code>N / (N-k)</code> and no longer <code>(N-1) / (N-df_k)</code>, as was previously the case and is still the case for iid and cluster robust errors.</li>
+<li>The <code>k_fixef</code> option <code>"nested"</code> has been renamed to <code>"nonnested"</code>.</li>
+<li>The <code>fixef_rm</code> argument is changed from default <code>"none"</code> to <code>"singleton"</code> for all estimation functions. This has no impact on point estimates, but might change inference due to a smaller number of observations in the degree of freedom correction.</li>
+<li>The multicollinearity default tolerance has been reduced from 1e-10 to 1e-09.</li>
+<li>The attribute <code>_dof_k</code> has been renamed to <code>_df_k</code>.</li>
+</ul>
+<p>Other related changes: - The arguments to adjust the small samples for the <code>wildboottest</code> methods have been renamed to <code>k_adj</code> and <code>G_adj</code>.</p>
+</section>
+<section id="moved-to-pixi.toml-and-install-from-conda-forge" class="level3">
+<h3 class="anchored" data-anchor-id="moved-to-pixi.toml-and-install-from-conda-forge">Moved to <code>pixi.toml</code> and install from conda-forge</h3>
+<p>We have been using pixi as our package manager for a while and are moving from a <code>pyproject.toml</code> to using a <code>pixi.toml</code> for specifying dependencies. We also install all package by default from the free and open source conda-forge. Because of some environment resolution challenges around an old version of <code>rpy2</code>that we need for testing <code>pyfixest</code> against <code>fixest</code>, we temporarily have dropped support for the dev and docs environments for windows. A fix is work in progress.</p>
+</section>
+</section>
+<section id="new-features" class="level2">
+<h2 class="anchored" data-anchor-id="new-features">New Features</h2>
+<section id="cupy-and-scipy-backends-via-lsmr" class="level3">
+<h3 class="anchored" data-anchor-id="cupy-and-scipy-backends-via-lsmr">CuPy and SciPy Backends via LSMR</h3>
+<p>We add CuPy and SciPy Backend to run the demeaning algorithm on the GPU via the sparse LSMR solver. For problems where the standard demeaner struggles to converge, this strategy can lead to significant speedups if paired with a GPU.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://raw.githubusercontent.com/py-econometrics/pyfixest/master/benchmarks/complex_benchmarks.png" class="img-fluid figure-img"></p>
+<figcaption>Complex Fixed Effects Benchmark</figcaption>
+</figure>
+</div>
+</section>
+<section id="hac-standard-errors" class="level3">
+<h3 class="anchored" data-anchor-id="hac-standard-errors">HAC Standard Errors</h3>
+<p>We now support HAC standard errors! Thanks for Daman (https://github.com/damandhaliwal) for all his work (and coping with me with the PR, which took forever to get through). We now support:</p>
+<ul>
+<li>time series HAC</li>
+<li>panel HAC</li>
+<li>panel DK</li>
+</ul>
+<p>variance-covariance matrices.</p>
+<p>For now, we assume that the time series column is consecutive and each entry has “time delta 1”. Relaxation of this requirement are work in progress.</p>
+</section>
 <section id="cat_template-argument-for-plotting-functions" class="level3">
 <h3 class="anchored" data-anchor-id="cat_template-argument-for-plotting-functions"><code>cat_template</code> argument for plotting functions</h3>
 <p>For easier encoding of categorical variables in relation to the <code>iplot()</code> and <code>coefplot()</code> functions, we add a new function argument, cat_template:</p>
-<div id="a3844b61" class="cell" data-execution_count="2">
+<div id="a631a9bc" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fit_c <span class="op">=</span> pf.feols(fml <span class="op">=</span> <span class="st">"Y ~ i(X1, f1)"</span>, data <span class="op">=</span> df)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>fit_c.iplot(cat_template <span class="op">=</span> <span class="st">"</span><span class="sc">{variable}</span><span class="st">::</span><span class="sc">{value}</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="2">
-   <div id="b35Pwf"></div>
+   <div id="BAiaGw"></div>
    <script type="text/javascript" data-lets-plot-script="plot">
    
    (function() {
@@ -362,7 +412,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
        };
    }
    
-   const containerDiv = document.getElementById("b35Pwf");
+   const containerDiv = document.getElementById("BAiaGw");
    let fig = null;
    
    function renderPlot() {
@@ -515,7 +565,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="updates-to-gelbach-decomposition">Updates to Gelbach Decomposition</h3>
 <p>We have reworked the Gelbach Decomposition method, with some breaking changes: by default, calling <code>Feols.decompose()</code> now returns a <code>GelbachDecomposition</code> instance - before, we’d return a <code>pd.DataFrame</code>. The <code>param</code> argument has been renamed to <code>decomp_var</code>, but is not yet deprecated.</p>
 <p>The class now comes with new <code>tidy()</code> and <code>etable()</code> methods.</p>
-<div id="ddb880b5" class="cell" data-execution_count="3">
+<div id="a28f7514" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.utils.dgps <span class="im">import</span> gelbach_data</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
@@ -527,7 +577,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>gb <span class="op">=</span> fit.decompose(decomp_var <span class="op">=</span> <span class="st">"x1"</span>, x1_vars <span class="op">=</span> [<span class="st">"x21"</span>],reps <span class="op">=</span> <span class="dv">10</span>, nthreads <span class="op">=</span> <span class="dv">1</span>)</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">type</span>(gb))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>  0%|          | 0/10 [00:00&lt;?, ?it/s]100%|██████████| 10/10 [00:00&lt;00:00, 374.65it/s]</code></pre>
+<pre><code>  0%|          | 0/10 [00:00&lt;?, ?it/s]100%|██████████| 10/10 [00:00&lt;00:00, 378.87it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;class 'pyfixest.estimation.decomposition.GelbachDecomposition'&gt;</code></pre>
@@ -538,7 +588,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>It is now also possible to add background variables that are included in both the long and short regressions via the <code>x1_vars</code> function argument.</p>
 <p>We can inspect results as a <code>pd.DataFrame</code></p>
-<div id="94c5d149" class="cell" data-execution_count="4">
+<div id="c727db1c" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>gb.tidy()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
@@ -558,43 +608,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <th data-quarto-table-cell-role="th">direct_effect</th>
 <td>1.412165</td>
-<td>0.756804</td>
-<td>2.010249</td>
+<td>0.943205</td>
+<td>1.978307</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">full_effect</th>
 <td>1.041753</td>
-<td>0.963686</td>
-<td>1.107566</td>
+<td>0.982489</td>
+<td>1.132804</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">explained_effect</th>
 <td>0.370412</td>
-<td>-0.341729</td>
-<td>0.959287</td>
+<td>-0.076909</td>
+<td>0.901939</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">unexplained_effect</th>
 <td>1.041753</td>
-<td>0.963686</td>
-<td>1.107566</td>
+<td>0.982489</td>
+<td>1.132804</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">x22</th>
 <td>0.061930</td>
-<td>-0.354957</td>
-<td>0.467544</td>
+<td>-0.205605</td>
+<td>0.419886</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">x23</th>
 <td>0.308483</td>
-<td>-0.000264</td>
-<td>0.501775</td>
+<td>0.125546</td>
+<td>0.506165</td>
 <td>Levels (units)</td>
 </tr>
 <tr class="odd">
@@ -607,50 +657,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <th data-quarto-table-cell-role="th">full_effect</th>
 <td>0.737699</td>
-<td>0.526707</td>
-<td>1.519877</td>
+<td>0.534825</td>
+<td>1.082775</td>
 <td>Share of Full Effect</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">explained_effect</th>
 <td>0.262301</td>
-<td>-0.519877</td>
-<td>0.473293</td>
+<td>-0.082775</td>
+<td>0.465175</td>
 <td>Share of Full Effect</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">unexplained_effect</th>
 <td>0.737699</td>
-<td>0.526707</td>
-<td>1.519877</td>
+<td>0.534825</td>
+<td>1.082775</td>
 <td>Share of Full Effect</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">x22</th>
 <td>0.043855</td>
-<td>-0.507592</td>
-<td>0.228930</td>
+<td>-0.214849</td>
+<td>0.219085</td>
 <td>Share of Full Effect</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">x23</th>
 <td>0.218446</td>
-<td>-0.026654</td>
-<td>0.262126</td>
+<td>0.128998</td>
+<td>0.255693</td>
 <td>Share of Full Effect</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">direct_effect</th>
 <td>3.812414</td>
-<td>-0.697249</td>
-<td>38.999669</td>
+<td>-37.088881</td>
+<td>5.219291</td>
 <td>Share of Explained Effect</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">full_effect</th>
 <td>2.812414</td>
-<td>-1.697249</td>
-<td>37.999669</td>
+<td>-38.088881</td>
+<td>4.219291</td>
 <td>Share of Explained Effect</td>
 </tr>
 <tr class="odd">
@@ -663,22 +713,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <th data-quarto-table-cell-role="th">unexplained_effect</th>
 <td>2.812414</td>
-<td>-1.697249</td>
-<td>37.999669</td>
+<td>-38.088881</td>
+<td>4.219291</td>
 <td>Share of Explained Effect</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">x22</th>
 <td>0.167192</td>
-<td>-7.165117</td>
-<td>0.796378</td>
+<td>0.082800</td>
+<td>7.629914</td>
 <td>Share of Explained Effect</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">x23</th>
 <td>0.832808</td>
-<td>0.203622</td>
-<td>8.165117</td>
+<td>-6.629914</td>
+<td>0.917200</td>
 <td>Share of Explained Effect</td>
 </tr>
 </tbody>
@@ -688,58 +738,61 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>or produce a <code>GT</code> table:</p>
-<div id="515a3b18" class="cell" data-execution_count="5">
+<div id="977125bd" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>gb.etable(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    stats <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    caption <span class="op">=</span> <span class="st">"Gelbach Decomposition"</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
-<div id="zotmhyyrii" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="srwjzyenmr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>
-#zotmhyyrii table {
+#srwjzyenmr table {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
 
-#zotmhyyrii thead, tbody, tfoot, tr, td, th { border-style: none; }
+#srwjzyenmr thead, tbody, tfoot, tr, td, th { border-style: none; }
  tr { background-color: transparent; }
-#zotmhyyrii p { margin: 0; padding: 0; }
- #zotmhyyrii .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: hidden; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #zotmhyyrii .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #zotmhyyrii .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #zotmhyyrii .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #zotmhyyrii .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #zotmhyyrii .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #zotmhyyrii .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #zotmhyyrii .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #zotmhyyrii .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #zotmhyyrii .gt_column_spanner_outer:first-child { padding-left: 0; }
- #zotmhyyrii .gt_column_spanner_outer:last-child { padding-right: 0; }
- #zotmhyyrii .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
- #zotmhyyrii .gt_spanner_row { border-bottom-style: hidden; }
- #zotmhyyrii .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: none; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
- #zotmhyyrii .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: none; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
- #zotmhyyrii .gt_from_md> :first-child { margin-top: 0; }
- #zotmhyyrii .gt_from_md> :last-child { margin-bottom: 0; }
- #zotmhyyrii .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
- #zotmhyyrii .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #zotmhyyrii .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #zotmhyyrii .gt_row_group_first td { border-top-width: 0.5px; }
- #zotmhyyrii .gt_row_group_first th { border-top-width: 0.5px; }
- #zotmhyyrii .gt_striped { background-color: rgba(128,128,128,0.05); }
- #zotmhyyrii .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
- #zotmhyyrii .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #zotmhyyrii .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #zotmhyyrii .gt_left { text-align: left; }
- #zotmhyyrii .gt_center { text-align: center; }
- #zotmhyyrii .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #zotmhyyrii .gt_font_normal { font-weight: normal; }
- #zotmhyyrii .gt_font_bold { font-weight: bold; }
- #zotmhyyrii .gt_font_italic { font-style: italic; }
- #zotmhyyrii .gt_super { font-size: 65%; }
- #zotmhyyrii .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #zotmhyyrii .gt_asterisk { font-size: 100%; vertical-align: 0; }
+#srwjzyenmr p { margin: 0; padding: 0; }
+ #srwjzyenmr .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: hidden; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #srwjzyenmr .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #srwjzyenmr .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #srwjzyenmr .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #srwjzyenmr .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #srwjzyenmr .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #srwjzyenmr .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #srwjzyenmr .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #srwjzyenmr .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #srwjzyenmr .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #srwjzyenmr .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #srwjzyenmr .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #srwjzyenmr .gt_spanner_row { border-bottom-style: hidden; }
+ #srwjzyenmr .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: none; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
+ #srwjzyenmr .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: none; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
+ #srwjzyenmr .gt_from_md> :first-child { margin-top: 0; }
+ #srwjzyenmr .gt_from_md> :last-child { margin-bottom: 0; }
+ #srwjzyenmr .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
+ #srwjzyenmr .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #srwjzyenmr .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #srwjzyenmr .gt_row_group_first td { border-top-width: 0.5px; }
+ #srwjzyenmr .gt_row_group_first th { border-top-width: 0.5px; }
+ #srwjzyenmr .gt_striped { color: #333333; background-color: #F4F4F4; }
+ #srwjzyenmr .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
+ #srwjzyenmr .gt_grand_summary_row { color: #333333; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
+ #srwjzyenmr .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
+ #srwjzyenmr .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
+ #srwjzyenmr .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #srwjzyenmr .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #srwjzyenmr .gt_left { text-align: left; }
+ #srwjzyenmr .gt_center { text-align: center; }
+ #srwjzyenmr .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #srwjzyenmr .gt_font_normal { font-weight: normal; }
+ #srwjzyenmr .gt_font_bold { font-weight: bold; }
+ #srwjzyenmr .gt_font_italic { font-style: italic; }
+ #srwjzyenmr .gt_super { font-size: 65%; }
+ #srwjzyenmr .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #srwjzyenmr .gt_asterisk { font-size: 100%; vertical-align: 0; }
  
 </style>
 
@@ -767,9 +820,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
-<td class="gt_row gt_center">[0.757, 2.010]</td>
-<td class="gt_row gt_center">[0.964, 1.108]</td>
-<td class="gt_row gt_center">[-0.342, 0.959]</td>
+<td class="gt_row gt_center">[0.943, 1.978]</td>
+<td class="gt_row gt_center">[0.982, 1.133]</td>
+<td class="gt_row gt_center">[-0.077, 0.902]</td>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">x22</th>
@@ -781,7 +834,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[-0.355, 0.468]</td>
+<td class="gt_row gt_center">[-0.206, 0.420]</td>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">x23</th>
@@ -793,7 +846,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[-0.000, 0.502]</td>
+<td class="gt_row gt_center">[0.126, 0.506]</td>
 </tr>
 <tr class="gt_group_heading_row even">
 <th colspan="4" class="gt_group_heading" data-quarto-table-cell-role="th">Share of Full Effect</th>
@@ -807,8 +860,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[0.527, 1.520]</td>
-<td class="gt_row gt_center">[-0.520, 0.473]</td>
+<td class="gt_row gt_center">[0.535, 1.083]</td>
+<td class="gt_row gt_center">[-0.083, 0.465]</td>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">x22</th>
@@ -820,7 +873,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[-0.508, 0.229]</td>
+<td class="gt_row gt_center">[-0.215, 0.219]</td>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">x23</th>
@@ -832,7 +885,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[-0.027, 0.262]</td>
+<td class="gt_row gt_center">[0.129, 0.256]</td>
 </tr>
 <tr class="gt_group_heading_row odd">
 <th colspan="4" class="gt_group_heading" data-quarto-table-cell-role="th">Share of Explained Effect</th>
@@ -853,7 +906,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[-7.165, 0.796]</td>
+<td class="gt_row gt_center">[0.083, 7.630]</td>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">x23</th>
@@ -865,7 +918,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th"></th>
 <td class="gt_row gt_center">-</td>
 <td class="gt_row gt_center">-</td>
-<td class="gt_row gt_center">[0.204, 8.165]</td>
+<td class="gt_row gt_center">[-6.630, 0.917]</td>
 </tr>
 </tbody><tfoot class="gt_sourcenotes">
 <tr class="odd">
@@ -886,14 +939,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="pyfixest-0.30.0" class="level2">
 <h2 class="anchored" data-anchor-id="pyfixest-0.30.0">PyFixest 0.30.0</h2>
-<section id="new-features" class="level3">
-<h3 class="anchored" data-anchor-id="new-features">New Features</h3>
+<section id="new-features-1" class="level3">
+<h3 class="anchored" data-anchor-id="new-features-1">New Features</h3>
 <ul>
 <li>We have created a <strong>Rust</strong> backend for all performance critical algorithms, with pretty great performance improvements! You can use the Rust backend by setting <code>demeaner_options = "rust"</code>.</li>
 </ul>
 <p>We find pretty great performance improvements and want to make the Rust backend the default in PyFixest 0.31.0.</p>
 <p>To back up the performance claim, here is a benchmark:</p>
-<div id="1bb90533" class="cell" data-execution_count="6">
+<div id="2e227406" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -933,61 +986,68 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>toc <span class="op">=</span> time.time()</span>
 <span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Rust backend took </span><span class="sc">{</span>toc<span class="op">-</span>tic<span class="sc">}</span><span class="ss">."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/model_matrix_fixest_.py:215: UserWarning: 1 singleton fixed effect(s) detected. These observations are dropped from the model.
+  warnings.warn(</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Numba backend took 17.704383373260498.
-Rust backend took 6.130049228668213.</code></pre>
+<pre><code>Numba backend took 5.421748399734497.
+Rust backend took 6.355311155319214.</code></pre>
 </div>
 </div>
 <p>Results are also matching =)</p>
-<div id="dc83d58b" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pf.etable([fit_nb, fit_rust], digits <span class="op">=</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="6cdb9151" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pf.etable([fit_nb, fit_rust], digits <span class="op">=</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
-<div id="nfvlvrsdjw" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="ppterqyrgy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>
-#nfvlvrsdjw table {
+#ppterqyrgy table {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
 
-#nfvlvrsdjw thead, tbody, tfoot, tr, td, th { border-style: none; }
+#ppterqyrgy thead, tbody, tfoot, tr, td, th { border-style: none; }
  tr { background-color: transparent; }
-#nfvlvrsdjw p { margin: 0; padding: 0; }
- #nfvlvrsdjw .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #nfvlvrsdjw .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #nfvlvrsdjw .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #nfvlvrsdjw .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #nfvlvrsdjw .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #nfvlvrsdjw .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #nfvlvrsdjw .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #nfvlvrsdjw .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #nfvlvrsdjw .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #nfvlvrsdjw .gt_column_spanner_outer:first-child { padding-left: 0; }
- #nfvlvrsdjw .gt_column_spanner_outer:last-child { padding-right: 0; }
- #nfvlvrsdjw .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
- #nfvlvrsdjw .gt_spanner_row { border-bottom-style: hidden; }
- #nfvlvrsdjw .gt_group_heading { padding-top: 0px; padding-bottom: 0px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
- #nfvlvrsdjw .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
- #nfvlvrsdjw .gt_from_md> :first-child { margin-top: 0; }
- #nfvlvrsdjw .gt_from_md> :last-child { margin-bottom: 0; }
- #nfvlvrsdjw .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
- #nfvlvrsdjw .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #nfvlvrsdjw .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #nfvlvrsdjw .gt_row_group_first td { border-top-width: 0.5px; }
- #nfvlvrsdjw .gt_row_group_first th { border-top-width: 0.5px; }
- #nfvlvrsdjw .gt_striped { background-color: rgba(128,128,128,0.05); }
- #nfvlvrsdjw .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
- #nfvlvrsdjw .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #nfvlvrsdjw .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #nfvlvrsdjw .gt_left { text-align: left; }
- #nfvlvrsdjw .gt_center { text-align: center; }
- #nfvlvrsdjw .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #nfvlvrsdjw .gt_font_normal { font-weight: normal; }
- #nfvlvrsdjw .gt_font_bold { font-weight: bold; }
- #nfvlvrsdjw .gt_font_italic { font-style: italic; }
- #nfvlvrsdjw .gt_super { font-size: 65%; }
- #nfvlvrsdjw .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #nfvlvrsdjw .gt_asterisk { font-size: 100%; vertical-align: 0; }
+#ppterqyrgy p { margin: 0; padding: 0; }
+ #ppterqyrgy .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #ppterqyrgy .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #ppterqyrgy .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #ppterqyrgy .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #ppterqyrgy .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #ppterqyrgy .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #ppterqyrgy .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #ppterqyrgy .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #ppterqyrgy .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #ppterqyrgy .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #ppterqyrgy .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #ppterqyrgy .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #ppterqyrgy .gt_spanner_row { border-bottom-style: hidden; }
+ #ppterqyrgy .gt_group_heading { padding-top: 0px; padding-bottom: 0px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
+ #ppterqyrgy .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
+ #ppterqyrgy .gt_from_md> :first-child { margin-top: 0; }
+ #ppterqyrgy .gt_from_md> :last-child { margin-bottom: 0; }
+ #ppterqyrgy .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
+ #ppterqyrgy .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #ppterqyrgy .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #ppterqyrgy .gt_row_group_first td { border-top-width: 0.5px; }
+ #ppterqyrgy .gt_row_group_first th { border-top-width: 0.5px; }
+ #ppterqyrgy .gt_striped { color: #333333; background-color: #F4F4F4; }
+ #ppterqyrgy .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
+ #ppterqyrgy .gt_grand_summary_row { color: #333333; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
+ #ppterqyrgy .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
+ #ppterqyrgy .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
+ #ppterqyrgy .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #ppterqyrgy .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #ppterqyrgy .gt_left { text-align: left; }
+ #ppterqyrgy .gt_center { text-align: center; }
+ #ppterqyrgy .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #ppterqyrgy .gt_font_normal { font-weight: normal; }
+ #ppterqyrgy .gt_font_bold { font-weight: bold; }
+ #ppterqyrgy .gt_font_italic { font-style: italic; }
+ #ppterqyrgy .gt_super { font-size: 65%; }
+ #ppterqyrgy .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #ppterqyrgy .gt_asterisk { font-size: 100%; vertical-align: 0; }
  
 </style>
 
@@ -1014,29 +1074,29 @@ Rust backend took 6.130049228668213.</code></pre>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">X1</th>
 <td class="gt_row gt_center">0.00022257<br>
-(0.00031818)</td>
+(0.00031662)</td>
 <td class="gt_row gt_center">0.00022257<br>
-(0.00031818)</td>
+(0.00031662)</td>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">X2</th>
 <td class="gt_row gt_center">0.00020980<br>
-(0.00031484)</td>
+(0.00031647)</td>
 <td class="gt_row gt_center">0.00020980<br>
-(0.00031484)</td>
+(0.00031647)</td>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">X3</th>
 <td class="gt_row gt_center">0.00062145*<br>
-(0.00031534)</td>
+(0.00031651)</td>
 <td class="gt_row gt_center">0.00062145*<br>
-(0.00031534)</td>
+(0.00031651)</td>
 </tr>
 <tr class="gt_group_heading_row odd">
 <th colspan="3" class="gt_group_heading" data-quarto-table-cell-role="th">fe</th>
 </tr>
 <tr class="even">
-<th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">f1</th>
+<th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">f2</th>
 <td class="gt_row gt_center">x</td>
 <td class="gt_row gt_center">x</td>
 </tr>
@@ -1046,7 +1106,7 @@ Rust backend took 6.130049228668213.</code></pre>
 <td class="gt_row gt_center">x</td>
 </tr>
 <tr class="even">
-<th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">f2</th>
+<th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">f1</th>
 <td class="gt_row gt_center">x</td>
 <td class="gt_row gt_center">x</td>
 </tr>
@@ -1060,8 +1120,8 @@ Rust backend took 6.130049228668213.</code></pre>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">S.E. type</th>
-<td class="gt_row gt_center">by: f1</td>
-<td class="gt_row gt_center">by: f1</td>
+<td class="gt_row gt_center">iid</td>
+<td class="gt_row gt_center">iid</td>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">R<sup>2</sup></th>
@@ -1088,40 +1148,40 @@ Rust backend took 6.130049228668213.</code></pre>
 <ul>
 <li>We now support <strong>quantile regression</strong>, including a Frisch-Newton Interior Point Solver with and without preprocessing, iid, heteroskedastic and cluster robust standard errors, fast algorithms for the entire quantile regression process, and some visualisations. In particular the algorithms for the quantile regression process show excellent performance. You can learn more about all features and take a look at more systematic benchmarks in the <a href="https://py-econometrics.github.io/pyfixest/quantile-regression.html">quantreg vignette</a>.</li>
 </ul>
-<div id="1f944e06" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>N_qr <span class="op">=</span> <span class="dv">10_000</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">929</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>df_qr <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"X1"</span>: rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr),</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"X2"</span>: rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr)</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>df_qr[<span class="st">"Y"</span>] <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span> <span class="op">+</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> df_qr[<span class="st">"X1"</span>] <span class="op">+</span> <span class="fl">1.9</span> <span class="op">*</span> df_qr[<span class="st">"X1"</span>] <span class="op">**</span> <span class="dv">4</span> <span class="op">+</span> df_qr[<span class="st">"X2"</span>] <span class="op">-</span> <span class="fl">0.4</span> <span class="op">*</span> df_qr[<span class="st">"X2"</span>] <span class="op">**</span><span class="dv">7</span> <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>fit_qr <span class="op">=</span> pf.quantreg(</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  fml <span class="op">=</span> <span class="st">"Y ~ X1 + X2"</span>,</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  data <span class="op">=</span> df_qr,</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  quantile <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.6</span>, <span class="fl">0.7</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>],</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  method <span class="op">=</span> <span class="st">"pfn"</span>,</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  multi_method <span class="op">=</span> <span class="st">"cfm2"</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>pf.qplot(fit_qr, figsize <span class="op">=</span> [<span class="dv">7</span>,<span class="dv">3</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="c64c6f94" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>N_qr <span class="op">=</span> <span class="dv">10_000</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">929</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>df_qr <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"X1"</span>: rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"X2"</span>: rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>df_qr[<span class="st">"Y"</span>] <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span> <span class="op">+</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> df_qr[<span class="st">"X1"</span>] <span class="op">+</span> <span class="fl">1.9</span> <span class="op">*</span> df_qr[<span class="st">"X1"</span>] <span class="op">**</span> <span class="dv">4</span> <span class="op">+</span> df_qr[<span class="st">"X2"</span>] <span class="op">-</span> <span class="fl">0.4</span> <span class="op">*</span> df_qr[<span class="st">"X2"</span>] <span class="op">**</span><span class="dv">7</span> <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, N_qr)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>fit_qr <span class="op">=</span> pf.quantreg(</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  fml <span class="op">=</span> <span class="st">"Y ~ X1 + X2"</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  data <span class="op">=</span> df_qr,</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  quantile <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.6</span>, <span class="fl">0.7</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>],</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  method <span class="op">=</span> <span class="st">"pfn"</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  multi_method <span class="op">=</span> <span class="st">"cfm2"</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>pf.qplot(fit_qr, figsize <span class="op">=</span> [<span class="dv">7</span>,<span class="dv">3</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:77: FutureWarning: 
            The Quantile Regression implementation is experimental and may change in future releases.
            But mostly, we expect the API to remain unchanged.
            
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:236: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6160 iterations.
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:237: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6160 iterations.
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:236: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6640 iterations.
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:237: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6640 iterations.
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:236: UserWarning: The Frisch-Newton Interior Point solver has not converged after 5839 iterations.
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:237: UserWarning: The Frisch-Newton Interior Point solver has not converged after 5839 iterations.
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:236: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6354 iterations.
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:237: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6354 iterations.
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:236: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6424 iterations.
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/quantreg/quantreg_.py:237: UserWarning: The Frisch-Newton Interior Point solver has not converged after 6424 iterations.
   warnings.warn(</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="8">
@@ -1134,7 +1194,7 @@ Rust backend took 6.130049228668213.</code></pre>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="changelog_files/figure-html/cell-9-output-3.png" width="662" height="278" class="figure-img"></p>
+<p><img src="changelog_files/figure-html/cell-9-output-3.png" width="661" height="276" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -1198,17 +1258,17 @@ Rust backend took 6.130049228668213.</code></pre>
 <li><p>The <code>decompose()</code> method runs fully on sparse matrices, which leads to large performance improvements on big data sets.</p></li>
 <li><p>We fix a small bug in the <code>predict()</code> method with <code>newdata</code>, see <a href="https://github.com/py-econometrics/pyfixest/issues/840">here</a> for details.</p></li>
 <li><p>We add a function argument <code>rename_models</code> to help rename model names in the <code>coefplot()</code> and <code>iplot()</code> functions and methods:</p>
-<div id="863bb011" class="cell" data-execution_count="9">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>pf.coefplot(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    models <span class="op">=</span> [fit1, fit2, fit3],</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    rename_models <span class="op">=</span> {</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        fit1._model_name_plot: <span class="st">"Model 1"</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        fit2._model_name_plot: <span class="st">"Model 2"</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        fit3._model_name_plot: <span class="st">"Model 3"</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="51790520" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pf.coefplot(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    models <span class="op">=</span> [fit1, fit2, fit3],</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    rename_models <span class="op">=</span> {</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        fit1._model_name_plot: <span class="st">"Model 1"</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        fit2._model_name_plot: <span class="st">"Model 2"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        fit3._model_name_plot: <span class="st">"Model 3"</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
-   <div id="A0zCqw"></div>
+   <div id="bvZ0QP"></div>
    <script type="text/javascript" data-lets-plot-script="plot">
 
    (function() {
@@ -1233,7 +1293,7 @@ Rust backend took 6.130049228668213.</code></pre>
        };
    }
 
-   const containerDiv = document.getElementById("A0zCqw");
+   const containerDiv = document.getElementById("bvZ0QP");
    let fig = null;
 
    function renderPlot() {
@@ -1242,8 +1302,8 @@ Rust backend took 6.130049228668213.</code></pre>
 "data":{
 "Coefficient":["Intercept","Intercept","X1","X1","X1","Intercept","Intercept","X1","X1","X1","X2","X2","X1","X1","X1","X2","X2"],
 "Estimate":[0.9185177588356426,0.8887791489339358,-1.000085840074156,-0.9929357698186859,-0.949525571419159,0.9185177588356426,0.8887791489339358,-1.000085840074156,-0.9929357698186859,-0.949525571419159,-0.17634236659778285,-0.17422527489454384,-1.000085840074156,-0.9929357698186859,-0.949525571419159,-0.17634236659778285,-0.17422527489454384],
-"2.5%":[0.6990856170653885,0.6760162836776398,-1.1663660739416457,-1.1540790755856785,-1.0856502791186817,0.6990856170653885,0.6760162836776398,-1.1663660739416457,-1.1540790755856785,-1.0856502791186817,-0.2190548570563819,-0.21187592912182676,-1.1663660739416457,-1.1540790755856785,-1.0856502791186817,-0.2190548570563819,-0.21187592912182676],
-"97.5%":[1.1379499006058966,1.101542014190232,-0.8338056062066661,-0.8317924640516935,-0.8134008637196364,1.1379499006058966,1.101542014190232,-0.8338056062066661,-0.8317924640516935,-0.8134008637196364,-0.1336298761391838,-0.13657462066726092,-0.8338056062066661,-0.8317924640516935,-0.8134008637196364,-0.1336298761391838,-0.13657462066726092],
+"2.5%":[0.6990856170653885,0.6760162836776398,-1.1663660739416457,-1.1540790755856785,-1.0797772495833682,0.6990856170653885,0.6760162836776398,-1.1663660739416457,-1.1540790755856785,-1.0797772495833682,-0.2190548570563819,-0.2087554961215888,-1.1663660739416457,-1.1540790755856785,-1.0797772495833682,-0.2190548570563819,-0.2087554961215888],
+"97.5%":[1.1379499006058966,1.101542014190232,-0.8338056062066661,-0.8317924640516935,-0.8192738932549499,1.1379499006058966,1.101542014190232,-0.8338056062066661,-0.8317924640516935,-0.8192738932549499,-0.1336298761391838,-0.13969505366749888,-0.8338056062066661,-0.8317924640516935,-0.8192738932549499,-0.1336298761391838,-0.13969505366749888],
 "Model":["Model 1","Model 2","Model 1","Model 2","Model 3","Model 1","Model 2","Model 1","Model 2","Model 3","Model 2","Model 3","Model 1","Model 2","Model 3","Model 2","Model 3"]
 },
 "mapping":{
@@ -1462,12 +1522,12 @@ Rust backend took 6.130049228668213.</code></pre>
 <ul>
 <li>Add support for randomization inference via the <code>ritest()</code> method:</li>
 </ul>
-<div id="bed98a4f" class="cell" data-execution_count="10">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(<span class="st">"Y ~ X1"</span>, data <span class="op">=</span> data)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>fit.ritest(resampvar<span class="op">=</span><span class="st">"X1=0"</span>, reps <span class="op">=</span> <span class="dv">1000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d82aff7f" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(<span class="st">"Y ~ X1"</span>, data <span class="op">=</span> data)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>fit.ritest(resampvar<span class="op">=</span><span class="st">"X1=0"</span>, reps <span class="op">=</span> <span class="dv">1000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="pyfixest-0.20.0" class="level2">
@@ -1481,88 +1541,88 @@ Rust backend took 6.130049228668213.</code></pre>
 <ul>
 <li>Fixes multiple smaller and larger performance regressions. The NYC-Taxi example regression now takes approximately 22 seconds to run (… if my laptopt is connected to a power charger)!</li>
 </ul>
-<div id="d3e59a9f" class="cell" data-execution_count="11">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co"># %%</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>nyc <span class="op">=</span> duckdb.sql(</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'''</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="st">    FROM 'C:/Users/alexa/Documents/nyc-taxi/**/*.parquet'</span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="st">    SELECT</span></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="st">        tip_amount, trip_distance, passenger_count,</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="st">        vendor_id, payment_type, dropoff_at,</span></span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="st">        dayofweek(dropoff_at) AS dofw</span></span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="st">    WHERE year = 2012 AND month &lt;= 3</span></span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="st">    '''</span></span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    ).df()</span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="co"># convert dowf, vendor_id, payment_type to categorical</span></span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>tic <span class="op">=</span> time.time()</span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"dofw"</span>] <span class="op">=</span> nyc[<span class="st">"dofw"</span>].astype(<span class="bu">int</span>)</span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"vendor_id"</span>] <span class="op">=</span> nyc[<span class="st">"vendor_id"</span>].astype(<span class="st">"category"</span>)</span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"payment_type"</span>] <span class="op">=</span> nyc[<span class="st">"payment_type"</span>].astype(<span class="st">"category"</span>)</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""</span></span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    I am convering columns of type 'objects' to 'categories' and 'int'data types outside</span></span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    of the regression, hence I am cheating a bit. This saves </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(time.time() <span class="op">-</span> tic)<span class="sc">}</span><span class="ss"> seconds.</span></span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    """</span></span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a><span class="co">#    I am convering columns of type 'objects' to 'categories' and 'int'data types outside</span></span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="co">#    of the regression, hence I am cheating a bit. This saves 7.0 seconds.</span></span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>run <span class="op">=</span> <span class="va">True</span></span>
-<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> run:</span>
-<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mock regression for JIT compilation</span></span>
-<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>    fit <span class="op">=</span> pf.feols(</span>
-<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>        fml <span class="op">=</span> <span class="st">"tip_amount ~ trip_distance + passenger_count | vendor_id + payment_type + dofw"</span>,</span>
-<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> nyc.iloc[<span class="dv">1</span>:<span class="dv">10_000</span>],</span>
-<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>        copy_data <span class="op">=</span> <span class="va">False</span>,</span>
-<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>        store_data <span class="op">=</span> <span class="va">False</span></span>
-<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> time</span>
-<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>    tic <span class="op">=</span> time.time()</span>
-<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>    fit <span class="op">=</span> pf.feols(</span>
-<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>        fml <span class="op">=</span> <span class="st">"tip_amount ~ trip_distance + passenger_count | vendor_id + payment_type + dofw"</span>,</span>
-<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> nyc,</span>
-<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>        copy_data <span class="op">=</span> <span class="va">False</span>, <span class="co"># saves a few seconds</span></span>
-<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a>        store_data <span class="op">=</span> <span class="va">False</span> <span class="co"># saves a few second</span></span>
-<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>    passed <span class="op">=</span> time.time() <span class="op">-</span> tic</span>
-<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Passed time is </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(passed)<span class="sc">}</span><span class="ss">."</span>)</span>
-<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Passed time is 22.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="a6597b62" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co"># %%</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>nyc <span class="op">=</span> duckdb.sql(</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'''</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="st">    FROM 'C:/Users/alexa/Documents/nyc-taxi/**/*.parquet'</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="st">    SELECT</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="st">        tip_amount, trip_distance, passenger_count,</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="st">        vendor_id, payment_type, dropoff_at,</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="st">        dayofweek(dropoff_at) AS dofw</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="st">    WHERE year = 2012 AND month &lt;= 3</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="st">    '''</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    ).df()</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co"># convert dowf, vendor_id, payment_type to categorical</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>tic <span class="op">=</span> time.time()</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"dofw"</span>] <span class="op">=</span> nyc[<span class="st">"dofw"</span>].astype(<span class="bu">int</span>)</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"vendor_id"</span>] <span class="op">=</span> nyc[<span class="st">"vendor_id"</span>].astype(<span class="st">"category"</span>)</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>nyc[<span class="st">"payment_type"</span>] <span class="op">=</span> nyc[<span class="st">"payment_type"</span>].astype(<span class="st">"category"</span>)</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    I am convering columns of type 'objects' to 'categories' and 'int'data types outside</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    of the regression, hence I am cheating a bit. This saves </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(time.time() <span class="op">-</span> tic)<span class="sc">}</span><span class="ss"> seconds.</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    """</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="co">#    I am convering columns of type 'objects' to 'categories' and 'int'data types outside</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a><span class="co">#    of the regression, hence I am cheating a bit. This saves 7.0 seconds.</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>run <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> run:</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mock regression for JIT compilation</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    fit <span class="op">=</span> pf.feols(</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>        fml <span class="op">=</span> <span class="st">"tip_amount ~ trip_distance + passenger_count | vendor_id + payment_type + dofw"</span>,</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> nyc.iloc[<span class="dv">1</span>:<span class="dv">10_000</span>],</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>        copy_data <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>        store_data <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> time</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    tic <span class="op">=</span> time.time()</span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    fit <span class="op">=</span> pf.feols(</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>        fml <span class="op">=</span> <span class="st">"tip_amount ~ trip_distance + passenger_count | vendor_id + payment_type + dofw"</span>,</span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> nyc,</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>        copy_data <span class="op">=</span> <span class="va">False</span>, <span class="co"># saves a few seconds</span></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>        store_data <span class="op">=</span> <span class="va">False</span> <span class="co"># saves a few second</span></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>    passed <span class="op">=</span> time.time() <span class="op">-</span> tic</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Passed time is </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(passed)<span class="sc">}</span><span class="ss">."</span>)</span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Passed time is 22.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ul>
 <li>Adds three new function arguments to <code>feols()</code> and <code>fepois()</code>: <code>copy_data</code>, <code>store_data</code>, and <code>fixef_tol</code>.</li>
 <li>Adds support for frequency weights with the <code>weights_type</code> function argument.</li>
 </ul>
-<div id="87962e4e" class="cell" data-execution_count="12">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data(N <span class="op">=</span> <span class="dv">10000</span>, model <span class="op">=</span> <span class="st">"Fepois"</span>)</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>df_weighted <span class="op">=</span> data[[<span class="st">"Y"</span>, <span class="st">"X1"</span>, <span class="st">"f1"</span>]].groupby([<span class="st">"Y"</span>, <span class="st">"X1"</span>, <span class="st">"f1"</span>]).size().reset_index().rename(columns<span class="op">=</span>{<span class="dv">0</span>: <span class="st">"count"</span>})</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>df_weighted[<span class="st">"id"</span>] <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(df_weighted.shape[<span class="dv">0</span>]))</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Dimension of the aggregated df:"</span>, df_weighted.shape)</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df_weighted.head())</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Y ~ X1 | f1"</span>,</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>fit_weighted <span class="op">=</span> pf.feols(</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Y ~ X1 | f1"</span>,</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_weighted,</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    weights <span class="op">=</span> <span class="st">"count"</span>,</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    weights_type <span class="op">=</span> <span class="st">"fweights"</span></span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>pf.etable([fit, fit_weighted], coef_fmt <span class="op">=</span> <span class="st">"b(se) </span><span class="ch">\n</span><span class="st"> (t) </span><span class="ch">\n</span><span class="st"> (p)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="dabf3113" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data(N <span class="op">=</span> <span class="dv">10000</span>, model <span class="op">=</span> <span class="st">"Fepois"</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>df_weighted <span class="op">=</span> data[[<span class="st">"Y"</span>, <span class="st">"X1"</span>, <span class="st">"f1"</span>]].groupby([<span class="st">"Y"</span>, <span class="st">"X1"</span>, <span class="st">"f1"</span>]).size().reset_index().rename(columns<span class="op">=</span>{<span class="dv">0</span>: <span class="st">"count"</span>})</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>df_weighted[<span class="st">"id"</span>] <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(df_weighted.shape[<span class="dv">0</span>]))</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Dimension of the aggregated df:"</span>, df_weighted.shape)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df_weighted.head())</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Y ~ X1 | f1"</span>,</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> data</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>fit_weighted <span class="op">=</span> pf.feols(</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Y ~ X1 | f1"</span>,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_weighted,</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    weights <span class="op">=</span> <span class="st">"count"</span>,</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    weights_type <span class="op">=</span> <span class="st">"fweights"</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>pf.etable([fit, fit_weighted], coef_fmt <span class="op">=</span> <span class="st">"b(se) </span><span class="ch">\n</span><span class="st"> (t) </span><span class="ch">\n</span><span class="st"> (p)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Dimension of the aggregated df: (1278, 5)
      Y   X1   f1  count  id
@@ -1572,53 +1632,62 @@ Rust backend took 6.130049228668213.</code></pre>
 3  0.0  0.0  3.0     17   3
 4  0.0  0.0  4.0     14   4</code></pre>
 </div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/model_matrix_fixest_.py:215: UserWarning: 1 singleton fixed effect(s) detected. These observations are dropped from the model.
+  warnings.warn(
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/model_matrix_fixest_.py:215: UserWarning: 1 singleton fixed effect(s) detected. These observations are dropped from the model.
+  warnings.warn(</code></pre>
+</div>
 <div class="cell-output cell-output-display" data-execution_count="10">
-<div id="nofurjqrbm" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="zmvvnjxqdf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>
-#nofurjqrbm table {
+#zmvvnjxqdf table {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
 
-#nofurjqrbm thead, tbody, tfoot, tr, td, th { border-style: none; }
+#zmvvnjxqdf thead, tbody, tfoot, tr, td, th { border-style: none; }
  tr { background-color: transparent; }
-#nofurjqrbm p { margin: 0; padding: 0; }
- #nofurjqrbm .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #nofurjqrbm .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #nofurjqrbm .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #nofurjqrbm .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #nofurjqrbm .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #nofurjqrbm .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #nofurjqrbm .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #nofurjqrbm .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #nofurjqrbm .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #nofurjqrbm .gt_column_spanner_outer:first-child { padding-left: 0; }
- #nofurjqrbm .gt_column_spanner_outer:last-child { padding-right: 0; }
- #nofurjqrbm .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
- #nofurjqrbm .gt_spanner_row { border-bottom-style: hidden; }
- #nofurjqrbm .gt_group_heading { padding-top: 0px; padding-bottom: 0px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
- #nofurjqrbm .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
- #nofurjqrbm .gt_from_md> :first-child { margin-top: 0; }
- #nofurjqrbm .gt_from_md> :last-child { margin-bottom: 0; }
- #nofurjqrbm .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
- #nofurjqrbm .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #nofurjqrbm .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #nofurjqrbm .gt_row_group_first td { border-top-width: 0.5px; }
- #nofurjqrbm .gt_row_group_first th { border-top-width: 0.5px; }
- #nofurjqrbm .gt_striped { background-color: rgba(128,128,128,0.05); }
- #nofurjqrbm .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
- #nofurjqrbm .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #nofurjqrbm .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #nofurjqrbm .gt_left { text-align: left; }
- #nofurjqrbm .gt_center { text-align: center; }
- #nofurjqrbm .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #nofurjqrbm .gt_font_normal { font-weight: normal; }
- #nofurjqrbm .gt_font_bold { font-weight: bold; }
- #nofurjqrbm .gt_font_italic { font-style: italic; }
- #nofurjqrbm .gt_super { font-size: 65%; }
- #nofurjqrbm .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #nofurjqrbm .gt_asterisk { font-size: 100%; vertical-align: 0; }
+#zmvvnjxqdf p { margin: 0; padding: 0; }
+ #zmvvnjxqdf .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: hidden; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #zmvvnjxqdf .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #zmvvnjxqdf .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #zmvvnjxqdf .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: bottom; padding-top: 4px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #zmvvnjxqdf .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #zmvvnjxqdf .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #zmvvnjxqdf .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #zmvvnjxqdf .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: bottom; padding-top: 4px; padding-bottom: 4px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #zmvvnjxqdf .gt_spanner_row { border-bottom-style: hidden; }
+ #zmvvnjxqdf .gt_group_heading { padding-top: 0px; padding-bottom: 0px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; border-left-style: none; border-left-width: 1px; border-left-color: white; border-right-style: none; border-right-width: 1px; border-right-color: white; vertical-align: middle; text-align: left; }
+ #zmvvnjxqdf .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 0px; font-weight: initial; border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 0.5px; border-bottom-color: black; vertical-align: middle; }
+ #zmvvnjxqdf .gt_from_md> :first-child { margin-top: 0; }
+ #zmvvnjxqdf .gt_from_md> :last-child { margin-bottom: 0; }
+ #zmvvnjxqdf .gt_row { padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: none; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 0px; border-left-color: white; border-right-style: none; border-right-width: 0px; border-right-color: white; vertical-align: middle; overflow-x: hidden; }
+ #zmvvnjxqdf .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: hidden; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #zmvvnjxqdf .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #zmvvnjxqdf .gt_row_group_first td { border-top-width: 0.5px; }
+ #zmvvnjxqdf .gt_row_group_first th { border-top-width: 0.5px; }
+ #zmvvnjxqdf .gt_striped { color: #333333; background-color: #F4F4F4; }
+ #zmvvnjxqdf .gt_table_body { border-top-style: solid; border-top-width: 0.5px; border-top-color: black; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: black; }
+ #zmvvnjxqdf .gt_grand_summary_row { color: #333333; background-color: #FFFFFF; text-transform: inherit; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; }
+ #zmvvnjxqdf .gt_first_grand_summary_row_bottom { border-top-style: double; border-top-width: 6px; border-top-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_last_grand_summary_row_top { border-bottom-style: double; border-bottom-width: 6px; border-bottom-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #zmvvnjxqdf .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #zmvvnjxqdf .gt_left { text-align: left; }
+ #zmvvnjxqdf .gt_center { text-align: center; }
+ #zmvvnjxqdf .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #zmvvnjxqdf .gt_font_normal { font-weight: normal; }
+ #zmvvnjxqdf .gt_font_bold { font-weight: bold; }
+ #zmvvnjxqdf .gt_font_italic { font-style: italic; }
+ #zmvvnjxqdf .gt_super { font-size: 65%; }
+ #zmvvnjxqdf .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #zmvvnjxqdf .gt_asterisk { font-size: 100%; vertical-align: 0; }
  
 </style>
 
@@ -1645,11 +1714,11 @@ Rust backend took 6.130049228668213.</code></pre>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">X1</th>
 <td class="gt_row gt_center">0.001(0.012)<br>
-(0.092)<br>
-(0.927)</td>
+(0.088)<br>
+(0.930)</td>
 <td class="gt_row gt_center">0.001(0.012)<br>
-(0.092)<br>
-(0.927)</td>
+(0.088)<br>
+(0.930)</td>
 </tr>
 <tr class="gt_group_heading_row odd">
 <th colspan="3" class="gt_group_heading" data-quarto-table-cell-role="th">fe</th>
@@ -1664,13 +1733,13 @@ Rust backend took 6.130049228668213.</code></pre>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">Observations</th>
-<td class="gt_row gt_center">9997</td>
-<td class="gt_row gt_center">9997</td>
+<td class="gt_row gt_center">9996</td>
+<td class="gt_row gt_center">9996</td>
 </tr>
 <tr class="odd">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">S.E. type</th>
-<td class="gt_row gt_center">by: f1</td>
-<td class="gt_row gt_center">by: f1</td>
+<td class="gt_row gt_center">iid</td>
+<td class="gt_row gt_center">iid</td>
 </tr>
 <tr class="even">
 <th class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th">R<sup>2</sup></th>
@@ -1708,30 +1777,30 @@ Rust backend took 6.130049228668213.</code></pre>
 <li>Additionally, <code>model_matrix_fixest</code> now returns a dictionary instead of a tuple.</li>
 <li>Brings back fixed effects reference setting via <code>i(var1, var2, ref)</code> syntax. Deprecates the <code>i_ref1</code>, <code>i_ref2</code> function arguments. I.e. it is again possible to e.g.&nbsp;run</li>
 </ul>
-<div id="093eb2d7" class="cell" data-execution_count="13">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>fit1 <span class="op">=</span> pf.feols(<span class="st">"Y ~ i(f1, X2)"</span>, data<span class="op">=</span>data)</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>fit1.coef()[<span class="dv">0</span>:<span class="dv">8</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="807f27cf" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>fit1 <span class="op">=</span> pf.feols(<span class="st">"Y ~ i(f1, X2)"</span>, data<span class="op">=</span>data)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>fit1.coef()[<span class="dv">0</span>:<span class="dv">8</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Via the <code>ref</code> syntax, via can set the reference level:</p>
-<div id="f9e1d9ed" class="cell" data-execution_count="14">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>fit2 <span class="op">=</span> pf.feols(<span class="st">"Y ~ i(f1, X2, ref = 1)"</span>, data<span class="op">=</span>data)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>fit2.coef()[<span class="dv">0</span>:<span class="dv">8</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="2a1bb332" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>fit2 <span class="op">=</span> pf.feols(<span class="st">"Y ~ i(f1, X2, ref = 1)"</span>, data<span class="op">=</span>data)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>fit2.coef()[<span class="dv">0</span>:<span class="dv">8</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="pyfixest-0.17.0" class="level2">
 <h2 class="anchored" data-anchor-id="pyfixest-0.17.0">PyFixest 0.17.0</h2>
 <ul>
 <li><p>Restructures the codebase and reorganizes how users can interact with the <code>pyfixest</code> API. It is now recommended to use <code>pyfixest</code> in the following way:</p>
-<div id="b12703d8" class="cell" data-execution_count="15">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>data[<span class="st">"D"</span>] <span class="op">=</span> data[<span class="st">"X1"</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(<span class="st">"Y ~ D + f1"</span>, data <span class="op">=</span> data)</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>fit.tidy()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="5f0e10a7" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pf.get_data()</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>data[<span class="st">"D"</span>] <span class="op">=</span> data[<span class="st">"X1"</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> pf.feols(<span class="st">"Y ~ D + f1"</span>, data <span class="op">=</span> data)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>fit.tidy()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
@@ -1793,8 +1862,8 @@ Rust backend took 6.130049228668213.</code></pre>
 </div>
 <p>The update should not inroduce any breaking changes. Thanks to <a href="https://github.com/Wenzhi-Ding"><span class="citation" data-cites="Wenzhi-Ding">@Wenzhi-Ding</span></a> for the PR!</p></li>
 <li><p>Adds support for simultaneous confidence intervals via a multiplier bootstrap. Thanks to <a href="https://github.com/apoorvalal"><span class="citation" data-cites="apoorvalal">@apoorvalal</span></a> for the contribution!</p>
-<div id="8b164d26" class="cell" data-execution_count="16">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>fit.confint(joint <span class="op">=</span> <span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="235bd054" class="cell" data-execution_count="16">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fit.confint(joint <span class="op">=</span> <span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="12">
 <div>
 
@@ -1810,18 +1879,18 @@ Rust backend took 6.130049228668213.</code></pre>
 <tbody>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">Intercept</th>
-<td>0.386822</td>
-<td>1.170876</td>
+<td>0.380045</td>
+<td>1.177653</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">D</th>
-<td>-1.753114</td>
-<td>-1.052119</td>
+<td>-1.759173</td>
+<td>-1.046061</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">f1</th>
-<td>-0.013779</td>
-<td>0.023328</td>
+<td>-0.014100</td>
+<td>0.023648</td>
 </tr>
 </tbody>
 </table>
@@ -1830,10 +1899,10 @@ Rust backend took 6.130049228668213.</code></pre>
 </div>
 </div></li>
 <li><p>Adds support for the causal cluster variance estimator by <a href="https://academic.oup.com/qje/article/138/1/1/6750017">Abadie et al.&nbsp;(QJE, 2023)</a> for OLS via the <code>.ccv()</code> method.</p>
-<div id="861c0b16" class="cell" data-execution_count="17">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>fit.ccv(treatment <span class="op">=</span> <span class="st">"D"</span>, cluster <span class="op">=</span> <span class="st">"group_id"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="a6fa80a4" class="cell" data-execution_count="17">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fit.ccv(treatment <span class="op">=</span> <span class="st">"D"</span>, cluster <span class="op">=</span> <span class="st">"group_id"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:1518: UserWarning: The initial model was not clustered. CRV1 inference is computed and stored in the model object.
+<pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:1577: UserWarning: The initial model was not clustered. CRV1 inference is computed and stored in the model object.
   warnings.warn(</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="13">
@@ -1856,11 +1925,11 @@ Rust backend took 6.130049228668213.</code></pre>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">CCV</th>
 <td>-1.4026168622179929</td>
-<td>0.283545</td>
-<td>-4.946711</td>
-<td>0.000104</td>
-<td>-1.998324</td>
-<td>-0.80691</td>
+<td>0.282268</td>
+<td>-4.969097</td>
+<td>0.000099</td>
+<td>-1.99564</td>
+<td>-0.809594</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">CRV1</th>
@@ -1902,8 +1971,8 @@ Rust backend took 6.130049228668213.</code></pre>
 <li>Changes all docstrings to <code>numpy</code> format.</li>
 <li>Difference-in-differences estimation functions now need to be imported via the <code>pyfixest.did.estimation</code> module:</li>
 </ul>
-<div id="559ae589" class="cell" data-execution_count="18">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.estimation <span class="im">import</span> did2s, lpdid, event_study</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="ded97224" class="cell" data-execution_count="18">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.estimation <span class="im">import</span> did2s, lpdid, event_study</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="pyfixest-0.13.5" class="level2">
@@ -1926,8 +1995,8 @@ Rust backend took 6.130049228668213.</code></pre>
 </section>
 <section id="pyfixest-0.13.0" class="level2">
 <h2 class="anchored" data-anchor-id="pyfixest-0.13.0">PyFixest 0.13.0</h2>
-<section id="new-features-1" class="level3">
-<h3 class="anchored" data-anchor-id="new-features-1">New Features</h3>
+<section id="new-features-2" class="level3">
+<h3 class="anchored" data-anchor-id="new-features-2">New Features</h3>
 <ul>
 <li>Introduces a new <code>pyfixest.did</code> module which contains routines for Difference-in-Differences estimation.</li>
 <li>Introduces support for basic versions of the local projections DiD estimator following <a href="https://www.nber.org/papers/w31184">Dube et al (2023)</a></li>
@@ -2003,31 +2072,31 @@ Rust backend took 6.130049228668213.</code></pre>
 <section id="new-feature" class="level3">
 <h3 class="anchored" data-anchor-id="new-feature">New feature</h3>
 <p>A <code>dids2()</code> function is added, which implements the 2-stage difference-in-differences procedure à la Gardner and follows the syntax of <span class="citation" data-cites="kylebutts">@kylebutts</span> <a href="https://github.com/kylebutts/did2s">did2s</a> R package.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.did <span class="im">import</span> did2s</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.estimation <span class="im">import</span> feols</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.visualize <span class="im">import</span> iplot</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>df_het <span class="op">=</span> pd.read_csv(<span class="st">"https://raw.githubusercontent.com/py-econometrics/pyfixest/master/pyfixest/did/data/df_het.csv"</span>)</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> did2s(</span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    df_het,</span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    first_stage <span class="op">=</span> <span class="st">"~ 0 | state + year"</span>,</span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>    second_stage <span class="op">=</span> <span class="st">"~i(rel_year)"</span>,</span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="st">"treat"</span>,</span>
-<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>    cluster <span class="op">=</span> <span class="st">"state"</span>,</span>
-<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    i_ref1 <span class="op">=</span> [<span class="op">-</span><span class="fl">1.0</span>, np.inf],</span>
-<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>fit_twfe <span class="op">=</span> feols(</span>
-<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"dep_var ~ i(rel_year) | state + year"</span>,</span>
-<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    df_het,</span>
-<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>    i_ref1 <span class="op">=</span> [<span class="op">-</span><span class="fl">1.0</span>, np.inf]</span>
-<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>iplot([fit, fit_twfe], coord_flip<span class="op">=</span><span class="va">False</span>, figsize <span class="op">=</span> (<span class="dv">900</span>, <span class="dv">400</span>), title <span class="op">=</span> <span class="st">"TWFE vs DID2S"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.did <span class="im">import</span> did2s</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.estimation <span class="im">import</span> feols</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.visualize <span class="im">import</span> iplot</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>df_het <span class="op">=</span> pd.read_csv(<span class="st">"https://raw.githubusercontent.com/py-econometrics/pyfixest/master/pyfixest/did/data/df_het.csv"</span>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> did2s(</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    df_het,</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    first_stage <span class="op">=</span> <span class="st">"~ 0 | state + year"</span>,</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>    second_stage <span class="op">=</span> <span class="st">"~i(rel_year)"</span>,</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>    treatment <span class="op">=</span> <span class="st">"treat"</span>,</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>    cluster <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    i_ref1 <span class="op">=</span> [<span class="op">-</span><span class="fl">1.0</span>, np.inf],</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>fit_twfe <span class="op">=</span> feols(</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"dep_var ~ i(rel_year) | state + year"</span>,</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>    df_het,</span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>    i_ref1 <span class="op">=</span> [<span class="op">-</span><span class="fl">1.0</span>, np.inf]</span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>iplot([fit, fit_twfe], coord_flip<span class="op">=</span><span class="va">False</span>, figsize <span class="op">=</span> (<span class="dv">900</span>, <span class="dv">400</span>), title <span class="op">=</span> <span class="st">"TWFE vs DID2S"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><img src="figures/event_study.svg" class="img-fluid"></p>
 </section>
 </section>
@@ -2036,37 +2105,37 @@ Rust backend took 6.130049228668213.</code></pre>
 <ul>
 <li>Adds basic support for event study estimation via two-way fixed effects and Gardner’s two-stage “Did2s” approach. This is a beta version and experimental. Further updates (i.e.&nbsp;proper event studies vs “only” ATTs) and a more flexible did2s front end will follow in future releases.</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.did <span class="im">import</span> event_study</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>df_het <span class="op">=</span> pd.read_csv(<span class="st">"pyfixest/did/data/df_het.csv"</span>)</span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>fit_twfe <span class="op">=</span> event_study(</span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_het,</span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    idname<span class="op">=</span> <span class="st">"state"</span>,</span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    tname <span class="op">=</span> <span class="st">"year"</span>,</span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>    gname <span class="op">=</span> <span class="st">"g"</span>,</span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>    estimator <span class="op">=</span> <span class="st">"twfe"</span></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>fit_did2s <span class="op">=</span> event_study(</span>
-<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_het,</span>
-<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
-<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>    idname<span class="op">=</span> <span class="st">"state"</span>,</span>
-<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>    tname <span class="op">=</span> <span class="st">"year"</span>,</span>
-<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>    gname <span class="op">=</span> <span class="st">"g"</span>,</span>
-<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>    estimator <span class="op">=</span> <span class="st">"did2s"</span></span>
-<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>pf.etable([fit_twfe, fit_did2s])</span>
-<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a><span class="co"># | Coefficient   | est1             | est2             |</span></span>
-<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a><span class="co"># |:--------------|:-----------------|:-----------------|</span></span>
-<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a><span class="co"># | ATT           | 2.135*** (0.044) | 2.152*** (0.048) |</span></span>
-<span id="cb28-31"><a href="#cb28-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Significance levels: * p &lt; 0.05, ** p &lt; 0.01, *** p &lt; 0.001</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.did.did <span class="im">import</span> event_study</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>df_het <span class="op">=</span> pd.read_csv(<span class="st">"pyfixest/did/data/df_het.csv"</span>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>fit_twfe <span class="op">=</span> event_study(</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_het,</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    idname<span class="op">=</span> <span class="st">"state"</span>,</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    tname <span class="op">=</span> <span class="st">"year"</span>,</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    gname <span class="op">=</span> <span class="st">"g"</span>,</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    estimator <span class="op">=</span> <span class="st">"twfe"</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>fit_did2s <span class="op">=</span> event_study(</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> df_het,</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    yname <span class="op">=</span> <span class="st">"dep_var"</span>,</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>    idname<span class="op">=</span> <span class="st">"state"</span>,</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>    tname <span class="op">=</span> <span class="st">"year"</span>,</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>    gname <span class="op">=</span> <span class="st">"g"</span>,</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>    estimator <span class="op">=</span> <span class="st">"did2s"</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>pf.etable([fit_twfe, fit_did2s])</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a><span class="co"># | Coefficient   | est1             | est2             |</span></span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a><span class="co"># |:--------------|:-----------------|:-----------------|</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a><span class="co"># | ATT           | 2.135*** (0.044) | 2.152*** (0.048) |</span></span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Significance levels: * p &lt; 0.05, ** p &lt; 0.01, *** p &lt; 0.001</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="pyfixest-0.10.6" class="level2">
 <h2 class="anchored" data-anchor-id="pyfixest-0.10.6">PyFixest 0.10.6</h2>
@@ -2114,41 +2183,41 @@ Rust backend took 6.130049228668213.</code></pre>
 <li>Multiple performance improvements.</li>
 <li>Most importantly, implements a custom demeaning algorithm in <code>numba</code> - thanks to Styfen Schaer (<span class="citation" data-cites="styfenschaer">@styfenschaer</span>), which leads to performance improvements of 5x or more:</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyhdfe</span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.demean <span class="im">import</span> demean</span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">1238</span>)</span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">10_000_000</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.random.normal(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">10</span><span class="op">*</span>N).reshape((N,<span class="dv">10</span>))</span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>f1 <span class="op">=</span> np.random.choice(<span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1000</span>)), N).reshape((N,<span class="dv">1</span>))</span>
-<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>f2 <span class="op">=</span> np.random.choice(<span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1000</span>)), N).reshape((N,<span class="dv">1</span>))</span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>flist <span class="op">=</span> np.concatenate((f1, f2), axis <span class="op">=</span> <span class="dv">1</span>)</span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>weights <span class="op">=</span> np.ones(N)</span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>algorithm <span class="op">=</span> pyhdfe.create(flist)</span>
-<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
-<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>res_pyhdfe <span class="op">=</span> algorithm.residualize(x)</span>
-<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
-<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(end_time <span class="op">-</span> start_time)</span>
-<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a><span class="co"># 26.04527711868286</span></span>
-<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
-<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a>res_pyfixest, success <span class="op">=</span> demean(x, flist, weights, tol <span class="op">=</span> <span class="fl">1e-10</span>)</span>
-<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the execution time</span></span>
-<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
-<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(end_time <span class="op">-</span> start_time)</span>
-<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a><span class="co">#4.334428071975708</span></span>
-<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-34"><a href="#cb29-34" aria-hidden="true" tabindex="-1"></a>np.allclose(res_pyhdfe , res_pyfixest)</span>
-<span id="cb29-35"><a href="#cb29-35" aria-hidden="true" tabindex="-1"></a><span class="co"># True</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyhdfe</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.demean <span class="im">import</span> demean</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">1238</span>)</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">10_000_000</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.random.normal(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">10</span><span class="op">*</span>N).reshape((N,<span class="dv">10</span>))</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>f1 <span class="op">=</span> np.random.choice(<span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1000</span>)), N).reshape((N,<span class="dv">1</span>))</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>f2 <span class="op">=</span> np.random.choice(<span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1000</span>)), N).reshape((N,<span class="dv">1</span>))</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>flist <span class="op">=</span> np.concatenate((f1, f2), axis <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>weights <span class="op">=</span> np.ones(N)</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>algorithm <span class="op">=</span> pyhdfe.create(flist)</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>res_pyhdfe <span class="op">=</span> algorithm.residualize(x)</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(end_time <span class="op">-</span> start_time)</span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a><span class="co"># 26.04527711868286</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>res_pyfixest, success <span class="op">=</span> demean(x, flist, weights, tol <span class="op">=</span> <span class="fl">1e-10</span>)</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the execution time</span></span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(end_time <span class="op">-</span> start_time)</span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a><span class="co">#4.334428071975708</span></span>
+<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-34"><a href="#cb31-34" aria-hidden="true" tabindex="-1"></a>np.allclose(res_pyhdfe , res_pyfixest)</span>
+<span id="cb31-35"><a href="#cb31-35" aria-hidden="true" tabindex="-1"></a><span class="co"># True</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="pyfixest-0.9.11" class="level2">
 <h2 class="anchored" data-anchor-id="pyfixest-0.9.11">PyFixest 0.9.11</h2>
@@ -2197,23 +2266,23 @@ Rust backend took 6.130049228668213.</code></pre>
 <section id="breaking-api-changes" class="level3">
 <h3 class="anchored" data-anchor-id="breaking-api-changes">Breaking API changes</h3>
 <p>It is no longer required to initiate an object of type <code>Fixest</code> prior to running [Feols(/reference/Feols.qmd) or <code>fepois</code>. Instead, you can now simply use <code>feols()</code> and <code>fepois()</code> as functions, just as in <code>fixest</code>. Both function can be found in an <code>estimation</code> module and need to obtain a <code>pd.DataFrame</code> as a function argument:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.estimation <span class="im">import</span> fixest, fepois</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.utils <span class="im">import</span> get_data</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> get_data()</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> feols(<span class="st">"Y ~ X1 | f1"</span>, data <span class="op">=</span> data, vcov <span class="op">=</span> <span class="st">"iid"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.estimation <span class="im">import</span> fixest, fepois</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.utils <span class="im">import</span> get_data</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> get_data()</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> feols(<span class="st">"Y ~ X1 | f1"</span>, data <span class="op">=</span> data, vcov <span class="op">=</span> <span class="st">"iid"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Calling <code>feols()</code> will return an instance of class [Feols(/reference/Feols.qmd), while calling <code>fepois()</code> will return an instance of class <code>Fepois</code>. Multiple estimation syntax will return an instance of class <code>FixestMulti</code>.</p>
 <p>Post processing works as before via <code>.summary()</code>, <code>.tidy()</code> and other methods.</p>
 </section>
-<section id="new-features-2" class="level3">
-<h3 class="anchored" data-anchor-id="new-features-2">New Features</h3>
+<section id="new-features-3" class="level3">
+<h3 class="anchored" data-anchor-id="new-features-3">New Features</h3>
 <p>A summary function allows to compare multiple models:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.summarize <span class="im">import</span> summary</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>fit2 <span class="op">=</span> feols(<span class="st">"Y ~ X1 + X2| f1"</span>, data <span class="op">=</span> data, vcov <span class="op">=</span> <span class="st">"iid"</span>)</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>summary([fit, fit2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.summarize <span class="im">import</span> summary</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>fit2 <span class="op">=</span> feols(<span class="st">"Y ~ X1 + X2| f1"</span>, data <span class="op">=</span> data, vcov <span class="op">=</span> <span class="st">"iid"</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>summary([fit, fit2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Visualization is possible via custom methods (<code>.iplot()</code> &amp; <code>.coefplot()</code>), but a new module allows to visualize a list of [Feols(/reference/Feols.qmd) and/or <code>Fepois</code> instances:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.visualize <span class="im">import</span> coefplot, iplot</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>coefplot([fit, fit2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode py code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyfixest.visualize <span class="im">import</span> coefplot, iplot</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>coefplot([fit, fit2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The documentation has been improved (though there is still room for progress), and the code has been cleaned up a bit (also lots of room for improvements).</p>
 
 
