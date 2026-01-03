@@ -146,6 +146,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link" href="../contributing.html"> 
 <span class="menu-text">Contributing</span></a>
   </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../pyfixest-sprint.html"> 
+<span class="menu-text">Sprint 2026</span></a>
+  </li>  
   <li class="nav-item dropdown ">
     <a class="nav-link dropdown-toggle" href="#" id="nav-menu-learn-more" role="link" data-bs-toggle="dropdown" aria-expanded="false">
  <span class="menu-text">Learn more</span>
@@ -227,7 +231,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/estimation.estimation.feols.html">Estimation Functions</a></li><li class="breadcrumb-item"><a href="../reference/did.estimation.event_study.html">did.estimation.event_study</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/estimation.api.feols.html">Estimation Functions</a></li><li class="breadcrumb-item"><a href="../reference/did.estimation.event_study.html">did.estimation.event_study</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -260,26 +264,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/estimation.estimation.feols.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">estimation.estimation.feols</span></a>
+  <a href="../reference/estimation.api.feols.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">estimation.api.feols</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/estimation.estimation.fepois.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">estimation.estimation.fepois</span></a>
+  <a href="../reference/estimation.api.fepois.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">estimation.api.fepois</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/estimation.estimation.feglm.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">estimation.estimation.feglm</span></a>
+  <a href="../reference/estimation.api.feglm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">estimation.api.feglm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../reference/estimation.estimation.quantreg.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">estimation.estimation.quantreg</span></a>
+  <a href="../reference/estimation.api.quantreg.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">estimation.api.quantreg</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -464,7 +468,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/estimation.estimation.feols.html">Estimation Functions</a></li><li class="breadcrumb-item"><a href="../reference/did.estimation.event_study.html">did.estimation.event_study</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/estimation.api.feols.html">Estimation Functions</a></li><li class="breadcrumb-item"><a href="../reference/did.estimation.event_study.html">did.estimation.event_study</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">did.estimation.event_study</h1>
 </div>
@@ -574,11 +578,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="returns" class="level2 doc-section doc-section-returns">
 <h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 79%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Name</th>
@@ -590,14 +589,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td></td>
 <td>object</td>
-<td>A fitted model object of class [Feols(/reference/Feols.qmd).</td>
+<td>A fitted model object of class <a href="../reference/estimation.feols_.Feols.html">Feols</a>.</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div id="e02f9c0b" class="cell" data-execution_count="1">
+<div id="d265e88d" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyfixest <span class="im">as</span> pf</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -630,7 +629,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>fit_twfe_saturated.iplot_aggregate()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 
-            <div id="4qjFbL"></div>
+            <div id="DFkC5T"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -654,9 +653,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("4qjFbL").appendChild(div);
+                        document.getElementById("DFkC5T").appendChild(div);
                     };
-                    var e = document.getElementById("4qjFbL");
+                    var e = document.getElementById("DFkC5T");
                     e.appendChild(script);
                 })()
             </script>
@@ -664,7 +663,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-display">
 
-            <div id="ECWbst"></div>
+            <div id="F1HHDx"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -688,9 +687,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("ECWbst").appendChild(div);
+                        document.getElementById("F1HHDx").appendChild(div);
                     };
-                    var e = document.getElementById("ECWbst");
+                    var e = document.getElementById("F1HHDx");
                     e.appendChild(script);
                 })()
             </script>
@@ -699,7 +698,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stderr">
 <pre><code>/home/runner/work/pyfixest/pyfixest/pyfixest/did/saturated_twfe.py:68: UserWarning: The SaturatedEventStudyClass is currently in beta. Please report any issues you may encounter.
   warnings.warn(
-/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:2769: UserWarning: 
+/home/runner/work/pyfixest/pyfixest/pyfixest/estimation/feols_.py:2756: UserWarning: 
             22 variables dropped due to multicollinearity.
             The following variables are dropped: 
     C(rel_time, contr.treatment(base=-1.0))[-20.0]:cohort_dummy_2000
