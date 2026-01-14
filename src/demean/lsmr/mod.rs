@@ -27,7 +27,7 @@ use crate::demean::demeaner::Demeaner;
 use crate::demean::types::{ConvergenceState, DemeanContext, DemeanResult, LSMRConfig};
 use buffers::LSMRBuffers;
 use kernel::{LSMRConfig as KernelConfig, LSMRKernel};
-use linear_operator::DesignMatrixOperator;
+use linear_operator::{DesignMatrixOperator, PreconditionedOperator};
 use preconditioner::{create_preconditioner, BoxedPreconditioner};
 
 /// LSMR-based demeaner.
@@ -73,7 +73,7 @@ impl Demeaner for LSMRDemeaner<'_> {
         debug_assert_eq!(input.len(), n_obs);
 
         // Create the linear operator
-        let operator = DesignMatrixOperator::new(self.ctx);
+        let base_operator = DesignMatrixOperator::new(self.ctx);
 
         // Create kernel config from our config
         let kernel_config = KernelConfig {
@@ -82,12 +82,18 @@ impl Demeaner for LSMRDemeaner<'_> {
             conlim: 1e8,
         };
 
-        // Solve for FE coefficients using unpreconditioned LSMR
-        // Note: Full preconditioning support will be added in later phases (P2/P3)
-        // For now, we solve the unpreconditioned problem: min ||D*coef - input||
+        // Solve using right-preconditioned LSMR:
+        // min ||A * M^{-1} * z - b||, then recover coef = M^{-1} * z
+        let precond_operator =
+            PreconditionedOperator::new(&base_operator, self.preconditioner.as_ref());
+
         let mut kernel = LSMRKernel::new(kernel_config, &mut self.buffers);
+        let mut z = vec![0.0; n_coef]; // Preconditioned variable
+        let result = kernel.solve(&precond_operator, input, &mut z);
+
+        // Recover actual coefficients: coef = M^{-1} * z
         let mut coef = vec![0.0; n_coef];
-        let result = kernel.solve(&operator, input, &mut coef);
+        self.preconditioner.apply(&z, &mut coef);
 
         // Compute demeaned output: demeaned = input - D * coef
         let mut demeaned = input.to_vec();
@@ -152,5 +158,80 @@ mod tests {
                 e
             );
         }
+    }
+
+    #[test]
+    fn test_lsmr_demeaner_two_fe() {
+        // 2 FEs with unbalanced groups - diagonal preconditioning should help
+        // 100 observations with 10 groups in FE1 and 5 groups in FE2
+        use crate::demean::lsmr::preconditioner::PreconditionerKind;
+
+        let n = 100;
+        let n_groups_1 = 10;
+        let n_groups_2 = 5;
+
+        // Create FE assignments
+        let mut flist_data = Vec::with_capacity(n * 2);
+        for i in 0..n {
+            flist_data.push(i % n_groups_1); // FE1: cyclic 0-9
+            flist_data.push((i / 20) % n_groups_2); // FE2: blocks of 20
+        }
+        let flist = Array2::from_shape_vec((n, 2), flist_data).unwrap();
+        let flist_view = flist.view();
+
+        // Create input data
+        let input: Vec<f64> = (0..n).map(|i| i as f64).collect();
+
+        let ctx = DemeanContext::new(&flist_view, None, false);
+
+        // Test with identity (no preconditioning)
+        let config_identity = LSMRConfig {
+            preconditioner: PreconditionerKind::None,
+            ..LSMRConfig::default()
+        };
+        let mut demeaner_identity = LSMRDemeaner::new(&ctx, config_identity);
+        let result_identity = demeaner_identity.solve(&input);
+
+        // Test with diagonal preconditioning
+        let config_diagonal = LSMRConfig {
+            preconditioner: PreconditionerKind::Diagonal,
+            ..LSMRConfig::default()
+        };
+        let mut demeaner_diagonal = LSMRDemeaner::new(&ctx, config_diagonal);
+        let result_diagonal = demeaner_diagonal.solve(&input);
+
+        // Both should converge
+        assert_eq!(result_identity.convergence, ConvergenceState::Converged);
+        assert_eq!(result_diagonal.convergence, ConvergenceState::Converged);
+
+        // Both should produce the same demeaned output
+        for (i, (&a, &b)) in result_identity
+            .demeaned
+            .iter()
+            .zip(result_diagonal.demeaned.iter())
+            .enumerate()
+        {
+            assert!(
+                (a - b).abs() < 1e-6,
+                "Mismatch at {}: identity={} diagonal={}",
+                i,
+                a,
+                b
+            );
+        }
+
+        println!(
+            "Identity iterations: {}, Diagonal iterations: {}",
+            result_identity.iterations, result_diagonal.iterations
+        );
+
+        // Diagonal preconditioning should use fewer or equal iterations
+        // (or at least not significantly more)
+        assert!(
+            result_diagonal.iterations <= result_identity.iterations + 5,
+            "Diagonal ({}) used many more iterations than identity ({})",
+            result_diagonal.iterations,
+            result_identity.iterations
+        );
     }
 }

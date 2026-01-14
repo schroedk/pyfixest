@@ -94,24 +94,20 @@ impl LinearOperator for DesignMatrixOperator<'_> {
 ///
 /// Represents the operator `A * M^{-1}` for right-preconditioned LSMR.
 /// We solve `min ||A * M^{-1} * z - b||`, then recover `x = M^{-1} * z`.
-///
-/// NOTE: This struct is currently unused - it will be activated when
-/// full preconditioning support is implemented in later phases (P2/P3).
-#[allow(dead_code)]
-pub struct PreconditionedOperator<'a, A, M> {
+pub struct PreconditionedOperator<'a, A> {
     operator: &'a A,
-    preconditioner: &'a M,
+    preconditioner: &'a dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
     /// Scratch buffer for M^{-1} * x (length: cols)
     /// Uses RefCell for interior mutability since LinearOperator::matvec takes &self
     scratch: std::cell::RefCell<Vec<f64>>,
 }
 
-#[allow(dead_code)]
-impl<'a, A: LinearOperator, M: crate::demean::lsmr::preconditioner::RightPreconditioner>
-    PreconditionedOperator<'a, A, M>
-{
+impl<'a, A: LinearOperator> PreconditionedOperator<'a, A> {
     /// Create a new preconditioned operator.
-    pub fn new(operator: &'a A, preconditioner: &'a M) -> Self {
+    pub fn new(
+        operator: &'a A,
+        preconditioner: &'a dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
+    ) -> Self {
         let scratch = std::cell::RefCell::new(vec![0.0; operator.cols()]);
         Self {
             operator,
@@ -121,9 +117,7 @@ impl<'a, A: LinearOperator, M: crate::demean::lsmr::preconditioner::RightPrecond
     }
 }
 
-impl<A: LinearOperator, M: crate::demean::lsmr::preconditioner::RightPreconditioner> LinearOperator
-    for PreconditionedOperator<'_, A, M>
-{
+impl<A: LinearOperator> LinearOperator for PreconditionedOperator<'_, A> {
     #[inline]
     fn rows(&self) -> usize {
         self.operator.rows()
