@@ -111,6 +111,121 @@ impl RightPreconditioner for DiagonalPreconditioner {
 }
 
 // =============================================================================
+// P2: Nullspace Deflation Preconditioner
+// =============================================================================
+
+/// Nullspace deflation preconditioner.
+///
+/// Projects out the constant (null space) component from each FE block.
+/// For each FE, the coefficients are centered by subtracting their weighted mean.
+///
+/// This handles rank-deficiency cleanly: FE coefficients are only identified
+/// up to a constant within each FE, and deflation removes this ambiguity.
+///
+/// # Cost
+/// - Construction: O(n_fe) to store block boundaries
+/// - Apply: O(n_coef) to compute and subtract means
+pub struct NullspaceDeflator {
+    /// Start and end indices for each FE block, plus their total weights
+    /// Each tuple is (start, end, sum_of_weights)
+    fe_blocks: Vec<(usize, usize, f64)>,
+    /// Weights for computing weighted mean (inv_group_weights from context)
+    weights: Vec<f64>,
+}
+
+impl NullspaceDeflator {
+    /// Create a nullspace deflator from a `DemeanContext`.
+    pub fn new(ctx: &DemeanContext) -> Self {
+        let mut fe_blocks = Vec::with_capacity(ctx.dims.n_fe);
+        let mut weights = Vec::with_capacity(ctx.dims.n_coef);
+
+        for fe in &ctx.fe_infos {
+            let start = fe.coef_start;
+            let end = start + fe.n_groups;
+            // Sum of weights (inverse of inv_group_weights = group counts)
+            let sum_weights: f64 = fe.inv_group_weights.iter().map(|&w| 1.0 / w).sum();
+            fe_blocks.push((start, end, sum_weights));
+
+            // Store 1/inv_group_weights = group_count for weighted mean
+            for &w in &fe.inv_group_weights {
+                weights.push(1.0 / w); // group_count
+            }
+        }
+
+        Self { fe_blocks, weights }
+    }
+}
+
+impl RightPreconditioner for NullspaceDeflator {
+    fn apply(&self, x: &[f64], z: &mut [f64]) {
+        // First copy x to z
+        z.copy_from_slice(x);
+
+        // For each FE block, subtract the weighted mean
+        for &(start, end, sum_weights) in &self.fe_blocks {
+            // Compute weighted sum
+            let weighted_sum: f64 = x[start..end]
+                .iter()
+                .zip(self.weights[start..end].iter())
+                .map(|(&xi, &wi)| xi * wi)
+                .sum();
+
+            // Weighted mean
+            let mean = weighted_sum / sum_weights;
+
+            // Subtract mean from each coefficient in this block
+            for z_i in z[start..end].iter_mut() {
+                *z_i -= mean;
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Composed Preconditioner
+// =============================================================================
+
+/// Composed preconditioner: applies P1 then P2.
+///
+/// For right preconditioning: M^{-1} = P2^{-1} * P1^{-1}
+/// So apply(x) computes: P2(P1(x))
+pub struct ComposedPreconditioner<P1, P2> {
+    p1: P1,
+    p2: P2,
+    /// Scratch buffer for intermediate result (uses Mutex for thread safety)
+    scratch: std::sync::Mutex<Vec<f64>>,
+}
+
+impl<P1: RightPreconditioner, P2: RightPreconditioner> ComposedPreconditioner<P1, P2> {
+    /// Create a composed preconditioner.
+    pub fn new(p1: P1, p2: P2, n_coef: usize) -> Self {
+        Self {
+            p1,
+            p2,
+            scratch: std::sync::Mutex::new(vec![0.0; n_coef]),
+        }
+    }
+}
+
+impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
+    for ComposedPreconditioner<P1, P2>
+{
+    fn apply(&self, x: &[f64], z: &mut [f64]) {
+        // z = P2(P1(x))
+        let mut scratch = self.scratch.lock().unwrap();
+        self.p1.apply(x, &mut scratch);
+        self.p2.apply(&scratch, z);
+    }
+
+    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+        // For transpose: (P2 * P1)^T = P1^T * P2^T
+        let mut scratch = self.scratch.lock().unwrap();
+        self.p2.apply_transpose(x, &mut scratch);
+        self.p1.apply_transpose(&scratch, z);
+    }
+}
+
+// =============================================================================
 // Preconditioner Configuration
 // =============================================================================
 
@@ -150,14 +265,17 @@ pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> B
         PreconditionerKind::None => Box::new(IdentityPreconditioner),
         PreconditionerKind::Diagonal => Box::new(DiagonalPreconditioner::new(ctx)),
         PreconditionerKind::DiagonalPlusDeflation => {
-            // TODO: Implement in Phase 3 (P2 task)
-            // For now, fall back to diagonal only
-            Box::new(DiagonalPreconditioner::new(ctx))
+            // P1 + P2: Diagonal scaling followed by nullspace deflation
+            let p1 = DiagonalPreconditioner::new(ctx);
+            let p2 = NullspaceDeflator::new(ctx);
+            Box::new(ComposedPreconditioner::new(p1, p2, ctx.dims.n_coef))
         }
         PreconditionerKind::TwoBlockStreaming { .. } => {
             // TODO: Implement in Phase 4 (P3 task)
-            // For now, fall back to diagonal
-            Box::new(DiagonalPreconditioner::new(ctx))
+            // For now, fall back to diagonal + deflation
+            let p1 = DiagonalPreconditioner::new(ctx);
+            let p2 = NullspaceDeflator::new(ctx);
+            Box::new(ComposedPreconditioner::new(p1, p2, ctx.dims.n_coef))
         }
     }
 }
