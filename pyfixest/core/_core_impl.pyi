@@ -23,6 +23,7 @@ def _demean_rs(
     tol: float = 1e-08,
     maxiter: int = 100_000,
     reorder_fe: bool = False,
+    solver: str = "gauss_seidel",
 ) -> DemeanResult: ...
 def _count_fixef_fully_nested_all_rs(
     all_fixef_array: NDArray,

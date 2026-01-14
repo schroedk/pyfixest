@@ -29,12 +29,17 @@
 
 pub mod accelerator;
 pub mod demeaner;
+pub mod lsmr;
 pub mod projection;
 mod sweep;
 pub mod types;
 
 use demeaner::{Demeaner, MultiFEDemeaner, SingleFEDemeaner, TwoFEDemeaner};
-use types::{ConvergenceState, DemeanContext, DemeanMultiResult, DemeanResult, FixestConfig};
+use lsmr::LSMRDemeaner;
+use types::{
+    ConvergenceState, DemeanContext, DemeanMultiResult, DemeanResult, FixestConfig, LSMRConfig,
+    SolverKind,
+};
 
 use ndarray::{Array2, ArrayView1, ArrayView2, Zip};
 use numpy::{PyArray2, PyReadonlyArray1, PyReadonlyArray2};
@@ -52,16 +57,25 @@ enum ThreadLocalDemeaner<'a> {
     Single(SingleFEDemeaner<'a>),
     Two(TwoFEDemeaner<'a>),
     Multi(MultiFEDemeaner<'a>),
+    LSMR(LSMRDemeaner<'a>),
 }
 
 impl<'a> ThreadLocalDemeaner<'a> {
-    /// Create a new thread-local demeaner based on the FE count.
+    /// Create a new thread-local demeaner based on solver type and FE count.
     #[inline]
-    fn new(ctx: &'a DemeanContext, config: &'a FixestConfig) -> Self {
-        match ctx.dims.n_fe {
-            1 => ThreadLocalDemeaner::Single(SingleFEDemeaner::new(ctx)),
-            2 => ThreadLocalDemeaner::Two(TwoFEDemeaner::new(ctx, config)),
-            _ => ThreadLocalDemeaner::Multi(MultiFEDemeaner::new(ctx, config)),
+    fn new(
+        ctx: &'a DemeanContext,
+        config: &'a FixestConfig,
+        solver: SolverKind,
+        lsmr_config: &'a LSMRConfig,
+    ) -> Self {
+        match solver {
+            SolverKind::GaussSeidel => match ctx.dims.n_fe {
+                1 => ThreadLocalDemeaner::Single(SingleFEDemeaner::new(ctx)),
+                2 => ThreadLocalDemeaner::Two(TwoFEDemeaner::new(ctx, config)),
+                _ => ThreadLocalDemeaner::Multi(MultiFEDemeaner::new(ctx, config)),
+            },
+            SolverKind::LSMR => ThreadLocalDemeaner::LSMR(LSMRDemeaner::new(ctx, *lsmr_config)),
         }
     }
 
@@ -72,11 +86,12 @@ impl<'a> ThreadLocalDemeaner<'a> {
             ThreadLocalDemeaner::Single(d) => d.solve(input),
             ThreadLocalDemeaner::Two(d) => d.solve(input),
             ThreadLocalDemeaner::Multi(d) => d.solve(input),
+            ThreadLocalDemeaner::LSMR(d) => d.solve(input),
         }
     }
 }
 
-/// Demean using accelerated coefficient-space iteration.
+/// Demean using the selected solver algorithm.
 ///
 /// Uses `for_each_init` to create one demeaner per thread, reusing buffers
 /// across all columns processed by that thread.
@@ -89,6 +104,7 @@ impl<'a> ThreadLocalDemeaner<'a> {
 /// * `tol` - Convergence tolerance
 /// * `maxiter` - Maximum iterations
 /// * `reorder_fe` - Whether to reorder FEs by size (largest first)
+/// * `solver` - Solver algorithm: GaussSeidel (default) or LSMR
 ///
 /// # Returns
 ///
@@ -100,6 +116,7 @@ pub(crate) fn demean(
     tol: f64,
     maxiter: usize,
     reorder_fe: bool,
+    solver: SolverKind,
 ) -> DemeanMultiResult {
     let (n_samples, n_features) = x.dim();
 
@@ -108,6 +125,12 @@ pub(crate) fn demean(
         maxiter,
         reorder_fe,
         ..FixestConfig::default()
+    };
+
+    let lsmr_config = LSMRConfig {
+        tol,
+        maxiter,
+        ..LSMRConfig::default()
     };
 
     let not_converged = Arc::new(AtomicUsize::new(0));
@@ -131,7 +154,7 @@ pub(crate) fn demean(
         .enumerate()
         .for_each_init(
             // Init closure: called once per thread to create the thread-local state
-            || ThreadLocalDemeaner::new(&ctx, &config),
+            || ThreadLocalDemeaner::new(&ctx, &config, solver, &lsmr_config),
             // Body closure: called for each column, reusing thread-local state
             |demeaner, (k, (mut dem_col, mut coef_col))| {
                 let col_view = x.column(k);
@@ -179,6 +202,7 @@ pub(crate) fn demean(
 /// * `tol` - Convergence tolerance (default: 1e-8)
 /// * `maxiter` - Maximum iterations (default: 100_000)
 /// * `reorder_fe` - Whether to reorder FEs by size (default: false)
+/// * `solver` - Solver algorithm: "gauss_seidel" (default) or "lsmr"
 ///
 /// # Returns
 ///
@@ -187,7 +211,7 @@ pub(crate) fn demean(
 /// - "fe_coefficients": Array of FE coefficients (n_coef, n_features)
 /// - "success": Boolean indicating convergence
 #[pyfunction]
-#[pyo3(signature = (x, flist, weights=None, tol=1e-8, maxiter=100_000, reorder_fe=false))]
+#[pyo3(signature = (x, flist, weights=None, tol=1e-8, maxiter=100_000, reorder_fe=false, solver="gauss_seidel"))]
 pub fn _demean_rs<'py>(
     py: Python<'py>,
     x: PyReadonlyArray2<f64>,
@@ -196,10 +220,22 @@ pub fn _demean_rs<'py>(
     tol: f64,
     maxiter: usize,
     reorder_fe: bool,
+    solver: &str,
 ) -> PyResult<Bound<'py, PyDict>> {
     let x_arr = x.as_array();
     let flist_arr = flist.as_array();
     let weights_arr = weights.as_ref().map(|w| w.as_array());
+
+    let solver_kind = match solver {
+        "gauss_seidel" => SolverKind::GaussSeidel,
+        "lsmr" => SolverKind::LSMR,
+        _ => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Unknown solver: '{}'. Use 'gauss_seidel' or 'lsmr'.",
+                solver
+            )))
+        }
+    };
 
     let result = py.detach(|| {
         demean(
@@ -209,6 +245,7 @@ pub fn _demean_rs<'py>(
             tol,
             maxiter,
             reorder_fe,
+            solver_kind,
         )
     });
 

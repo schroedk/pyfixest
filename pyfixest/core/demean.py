@@ -11,6 +11,7 @@ def demean(
     tol: float = 1e-08,
     maxiter: int = 100_000,
     reorder_fe: bool = False,
+    solver: str = "gauss_seidel",
 ) -> tuple[NDArray, bool]:
     """
     Demean an array.
@@ -34,6 +35,11 @@ def demean(
     reorder_fe : bool, optional
         Whether to reorder fixed effects by size (largest first) before demeaning.
         This can improve convergence for some datasets. Defaults to False.
+    solver : str, optional
+        Solver algorithm to use. Options:
+        - "gauss_seidel" (default): Accelerated Gauss-Seidel with Irons-Tuck.
+        - "lsmr": LSMR (Least Squares Minimal Residual) algorithm.
+        LSMR may converge faster for certain FE structures (many FEs, unbalanced groups).
 
     Returns
     -------
@@ -85,5 +91,6 @@ def demean(
         tol,
         maxiter,
         reorder_fe,
+        solver,
     )
     return result["demeaned"], result["success"]

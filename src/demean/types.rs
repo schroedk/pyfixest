@@ -35,6 +35,8 @@
 
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
+use crate::demean::lsmr::preconditioner::PreconditionerKind;
+
 // =============================================================================
 // Dimensions
 // =============================================================================
@@ -412,6 +414,54 @@ impl Default for FixestConfig {
             reorder_fe: false,
         }
     }
+}
+
+// =============================================================================
+// LSMRConfig
+// =============================================================================
+
+/// Configuration parameters for the LSMR solver.
+///
+/// LSMR (Least Squares Minimal Residual) is an alternative to accelerated
+/// Gauss-Seidel for fixed effects demeaning. It may converge faster for
+/// certain problem structures (many FEs, unbalanced groups, etc.).
+#[derive(Clone, Copy)]
+pub struct LSMRConfig {
+    /// Convergence tolerance for ||A^T r|| / (||A|| ||r||).
+    pub tol: f64,
+
+    /// Maximum number of LSMR iterations.
+    pub maxiter: usize,
+
+    /// Preconditioner type to use.
+    pub preconditioner: PreconditionerKind,
+}
+
+impl Default for LSMRConfig {
+    fn default() -> Self {
+        Self {
+            tol: 1e-8,
+            maxiter: 10_000,
+            preconditioner: PreconditionerKind::Diagonal,
+        }
+    }
+}
+
+// =============================================================================
+// SolverKind
+// =============================================================================
+
+/// Available solver algorithms for fixed effects demeaning.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SolverKind {
+    /// Accelerated Gauss-Seidel with Irons-Tuck acceleration.
+    /// This is the default and matches R's fixest package.
+    #[default]
+    GaussSeidel,
+
+    /// LSMR (Least Squares Minimal Residual) algorithm.
+    /// May converge faster for certain problem structures.
+    LSMR,
 }
 
 // =============================================================================
