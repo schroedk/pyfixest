@@ -226,6 +226,198 @@ impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
 }
 
 // =============================================================================
+// P3: Two-Block Streaming Preconditioner
+// =============================================================================
+
+/// Two-block streaming Gauss-Seidel preconditioner.
+///
+/// Performs fixed inner Gauss-Seidel iterations on a 2-FE subsystem.
+/// The two FEs can be auto-selected based on cross-correlation (density of
+/// the D_p^T * D_q matrix) or manually specified.
+///
+/// This preconditioner is most effective for 3+ FE problems where two FEs
+/// have strong coupling.
+///
+/// # Cost
+/// - Construction: O(n_fe²) for auto-selection, O(1) for manual
+/// - Apply: O(n_obs × inner_iters) per application
+pub struct TwoBlockStreamingPreconditioner {
+    /// Index of first FE in the 2-block subsystem
+    fe_p: usize,
+    /// Index of second FE in the 2-block subsystem
+    fe_q: usize,
+    /// Number of inner GS iterations
+    inner_iters: usize,
+    /// Coefficient start offset for FE p
+    coef_start_p: usize,
+    /// Coefficient start offset for FE q
+    coef_start_q: usize,
+    /// Number of groups in FE p
+    n_groups_p: usize,
+    /// Number of groups in FE q
+    n_groups_q: usize,
+    /// Group IDs for FE p (for each observation)
+    group_ids_p: Vec<usize>,
+    /// Group IDs for FE q (for each observation)
+    group_ids_q: Vec<usize>,
+    /// Inverse group weights for FE p
+    inv_weights_p: Vec<f64>,
+    /// Inverse group weights for FE q
+    inv_weights_q: Vec<f64>,
+}
+
+impl TwoBlockStreamingPreconditioner {
+    /// Create a two-block streaming preconditioner.
+    ///
+    /// # Arguments
+    /// * `ctx` - DemeanContext with FE information
+    /// * `fe_p` - First FE index (or None for auto-select)
+    /// * `fe_q` - Second FE index (or None for auto-select)
+    /// * `inner_iters` - Number of inner GS iterations (typically 2-5)
+    pub fn new(
+        ctx: &DemeanContext,
+        fe_p: Option<usize>,
+        fe_q: Option<usize>,
+        inner_iters: usize,
+    ) -> Self {
+        // Auto-select FE pair if not specified
+        let (p, q) = match (fe_p, fe_q) {
+            (Some(p), Some(q)) => (p, q),
+            _ => select_best_fe_pair(ctx),
+        };
+
+        let fe_p_info = &ctx.fe_infos[p];
+        let fe_q_info = &ctx.fe_infos[q];
+
+        Self {
+            fe_p: p,
+            fe_q: q,
+            inner_iters,
+            coef_start_p: fe_p_info.coef_start,
+            coef_start_q: fe_q_info.coef_start,
+            n_groups_p: fe_p_info.n_groups,
+            n_groups_q: fe_q_info.n_groups,
+            group_ids_p: fe_p_info.group_ids.clone(),
+            group_ids_q: fe_q_info.group_ids.clone(),
+            inv_weights_p: fe_p_info.inv_group_weights.clone(),
+            inv_weights_q: fe_q_info.inv_group_weights.clone(),
+        }
+    }
+
+    /// Perform one GS sweep: update FE p coefficients given FE q coefficients.
+    fn sweep_p(&self, coef: &mut [f64]) {
+        // Read q coefficients first to avoid borrow conflicts
+        let mut coef_q_copy = vec![0.0; self.n_groups_q];
+        coef_q_copy.copy_from_slice(&coef[self.coef_start_q..self.coef_start_q + self.n_groups_q]);
+
+        // Accumulate sums for each group in p
+        let mut sums = vec![0.0; self.n_groups_p];
+        for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
+            // Subtract contribution from q
+            sums[gp] -= coef_q_copy[gq];
+            // Add back current p coefficient (for GS iteration)
+            sums[gp] += coef[self.coef_start_p + gp];
+        }
+
+        // Update p coefficients
+        for (g, (&sum, &inv_w)) in sums.iter().zip(self.inv_weights_p.iter()).enumerate() {
+            coef[self.coef_start_p + g] = sum * inv_w;
+        }
+    }
+
+    /// Perform one GS sweep: update FE q coefficients given FE p coefficients.
+    fn sweep_q(&self, coef: &mut [f64]) {
+        // Read p coefficients first to avoid borrow conflicts
+        let mut coef_p_copy = vec![0.0; self.n_groups_p];
+        coef_p_copy.copy_from_slice(&coef[self.coef_start_p..self.coef_start_p + self.n_groups_p]);
+
+        // Accumulate sums for each group in q
+        let mut sums = vec![0.0; self.n_groups_q];
+        for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
+            sums[gq] -= coef_p_copy[gp];
+            sums[gq] += coef[self.coef_start_q + gq];
+        }
+
+        // Update q coefficients
+        for (g, (&sum, &inv_w)) in sums.iter().zip(self.inv_weights_q.iter()).enumerate() {
+            coef[self.coef_start_q + g] = sum * inv_w;
+        }
+    }
+}
+
+impl RightPreconditioner for TwoBlockStreamingPreconditioner {
+    fn apply(&self, x: &[f64], z: &mut [f64]) {
+        // Copy input to output
+        z.copy_from_slice(x);
+
+        // Perform inner_iters Gauss-Seidel iterations on the 2-FE subsystem
+        for _ in 0..self.inner_iters {
+            self.sweep_p(z);
+            self.sweep_q(z);
+        }
+    }
+}
+
+/// Select the best FE pair for two-block preconditioning.
+///
+/// Uses cross-correlation (density of D_p^T * D_q) to identify the most
+/// coupled FE pair. Higher density means more observations share both FE
+/// groups, indicating stronger coupling.
+fn select_best_fe_pair(ctx: &DemeanContext) -> (usize, usize) {
+    let n_fe = ctx.dims.n_fe;
+
+    // For 2 FEs, the choice is obvious
+    if n_fe == 2 {
+        return (0, 1);
+    }
+
+    // For 1 FE, return (0, 0) - caller should handle this edge case
+    if n_fe < 2 {
+        return (0, 0);
+    }
+
+    let mut best_pair = (0, 1);
+    let mut best_density = 0.0;
+
+    for p in 0..n_fe {
+        for q in (p + 1)..n_fe {
+            let density = compute_pair_density(
+                &ctx.fe_infos[p].group_ids,
+                &ctx.fe_infos[q].group_ids,
+                ctx.fe_infos[p].n_groups,
+                ctx.fe_infos[q].n_groups,
+            );
+            if density > best_density {
+                best_density = density;
+                best_pair = (p, q);
+            }
+        }
+    }
+
+    best_pair
+}
+
+/// Compute the density of the cross-correlation matrix D_p^T * D_q.
+///
+/// Density = (number of distinct (group_p, group_q) pairs) / (n_groups_p * n_groups_q)
+/// Higher density indicates stronger coupling between the two FEs.
+fn compute_pair_density(
+    group_ids_p: &[usize],
+    group_ids_q: &[usize],
+    n_groups_p: usize,
+    n_groups_q: usize,
+) -> f64 {
+    use std::collections::HashSet;
+
+    let mut pairs: HashSet<(usize, usize)> = HashSet::new();
+    for (&gp, &gq) in group_ids_p.iter().zip(group_ids_q.iter()) {
+        pairs.insert((gp, gq));
+    }
+
+    pairs.len() as f64 / (n_groups_p * n_groups_q) as f64
+}
+
+// =============================================================================
 // Preconditioner Configuration
 // =============================================================================
 
@@ -270,12 +462,16 @@ pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> B
             let p2 = NullspaceDeflator::new(ctx);
             Box::new(ComposedPreconditioner::new(p1, p2, ctx.dims.n_coef))
         }
-        PreconditionerKind::TwoBlockStreaming { .. } => {
-            // TODO: Implement in Phase 4 (P3 task)
-            // For now, fall back to diagonal + deflation
+        PreconditionerKind::TwoBlockStreaming {
+            fe_p,
+            fe_q,
+            inner_iters,
+        } => {
+            // P3: Two-block streaming GS on the most coupled FE pair
+            // Compose with P1 (diagonal) for better conditioning
             let p1 = DiagonalPreconditioner::new(ctx);
-            let p2 = NullspaceDeflator::new(ctx);
-            Box::new(ComposedPreconditioner::new(p1, p2, ctx.dims.n_coef))
+            let p3 = TwoBlockStreamingPreconditioner::new(ctx, fe_p, fe_q, inner_iters);
+            Box::new(ComposedPreconditioner::new(p1, p3, ctx.dims.n_coef))
         }
     }
 }
