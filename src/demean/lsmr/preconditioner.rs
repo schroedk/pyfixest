@@ -260,12 +260,14 @@ impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
 /// have strong coupling.
 ///
 /// # Cost
-/// - Construction: O(n_fe²) for auto-selection, O(1) for manual
+/// - Construction: O(1)
 /// - Apply: O(n_obs × inner_iters) per application
 pub struct TwoBlockStreamingPreconditioner {
     /// Index of first FE in the 2-block subsystem
+    #[allow(dead_code)]
     fe_p: usize,
     /// Index of second FE in the 2-block subsystem
+    #[allow(dead_code)]
     fe_q: usize,
     /// Number of inner GS iterations
     inner_iters: usize,
@@ -281,10 +283,13 @@ pub struct TwoBlockStreamingPreconditioner {
     group_ids_p: Vec<usize>,
     /// Group IDs for FE q (for each observation)
     group_ids_q: Vec<usize>,
-    /// Inverse group weights for FE p
+    /// Inverse group weights for FE p (1/count)
     inv_weights_p: Vec<f64>,
-    /// Inverse group weights for FE q
+    /// Inverse group weights for FE q (1/count)
     inv_weights_q: Vec<f64>,
+    /// Preallocated scratch buffers (use Mutex for interior mutability)
+    scratch_p: std::sync::Mutex<Vec<f64>>,
+    scratch_q: std::sync::Mutex<Vec<f64>>,
 }
 
 impl TwoBlockStreamingPreconditioner {
@@ -310,69 +315,63 @@ impl TwoBlockStreamingPreconditioner {
         let fe_p_info = &ctx.fe_infos[p];
         let fe_q_info = &ctx.fe_infos[q];
 
+        let n_groups_p = fe_p_info.n_groups;
+        let n_groups_q = fe_q_info.n_groups;
+
         Self {
             fe_p: p,
             fe_q: q,
             inner_iters,
             coef_start_p: fe_p_info.coef_start,
             coef_start_q: fe_q_info.coef_start,
-            n_groups_p: fe_p_info.n_groups,
-            n_groups_q: fe_q_info.n_groups,
+            n_groups_p,
+            n_groups_q,
             group_ids_p: fe_p_info.group_ids.clone(),
             group_ids_q: fe_q_info.group_ids.clone(),
             inv_weights_p: fe_p_info.inv_group_weights.clone(),
             inv_weights_q: fe_q_info.inv_group_weights.clone(),
+            scratch_p: std::sync::Mutex::new(vec![0.0; n_groups_p]),
+            scratch_q: std::sync::Mutex::new(vec![0.0; n_groups_q]),
         }
     }
 
     /// Perform one GS sweep: update FE p coefficients given FE q coefficients.
     ///
     /// Solves: z_p[g] = (x_p[g] - sum_{i in g} z_q[group_q[i]]) / count_g
-    ///
-    /// # Arguments
-    /// * `x` - Original input (RHS of the system)
-    /// * `z` - Current iterate (modified in place)
-    fn sweep_p(&self, x: &[f64], z: &mut [f64]) {
-        // Start with the input RHS for p
-        let mut rhs = vec![0.0; self.n_groups_p];
-        for g in 0..self.n_groups_p {
-            rhs[g] = x[self.coef_start_p + g];
-        }
+    fn sweep_p(&self, x: &[f64], z: &mut [f64], rhs: &mut [f64]) {
+        // Initialize RHS from input
+        rhs.iter_mut()
+            .enumerate()
+            .for_each(|(g, r)| *r = x[self.coef_start_p + g]);
 
-        // Subtract off-diagonal contribution: M_pq * z_q
-        // where M_pq[g,h] = count of obs with (group_p=g, group_q=h)
+        // Streaming matvec: rhs[gp] -= sum over obs with group_p=gp of z_q[group_q]
         for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
             rhs[gp] -= z[self.coef_start_q + gq];
         }
 
-        // Divide by diagonal: z_p[g] = rhs[g] / count_g
-        for g in 0..self.n_groups_p {
-            z[self.coef_start_p + g] = rhs[g] * self.inv_weights_p[g];
+        // Divide by diagonal
+        for (g, (&r, &inv_w)) in rhs.iter().zip(self.inv_weights_p.iter()).enumerate() {
+            z[self.coef_start_p + g] = r * inv_w;
         }
     }
 
     /// Perform one GS sweep: update FE q coefficients given FE p coefficients.
     ///
     /// Solves: z_q[h] = (x_q[h] - sum_{i in h} z_p[group_p[i]]) / count_h
-    ///
-    /// # Arguments
-    /// * `x` - Original input (RHS of the system)
-    /// * `z` - Current iterate (modified in place)
-    fn sweep_q(&self, x: &[f64], z: &mut [f64]) {
-        // Start with the input RHS for q
-        let mut rhs = vec![0.0; self.n_groups_q];
-        for g in 0..self.n_groups_q {
-            rhs[g] = x[self.coef_start_q + g];
-        }
+    fn sweep_q(&self, x: &[f64], z: &mut [f64], rhs: &mut [f64]) {
+        // Initialize RHS from input
+        rhs.iter_mut()
+            .enumerate()
+            .for_each(|(h, r)| *r = x[self.coef_start_q + h]);
 
-        // Subtract off-diagonal contribution: M_qp * z_p
+        // Streaming matvec: rhs[gq] -= sum over obs with group_q=gq of z_p[group_p]
         for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
             rhs[gq] -= z[self.coef_start_p + gp];
         }
 
-        // Divide by diagonal: z_q[h] = rhs[h] / count_h
-        for g in 0..self.n_groups_q {
-            z[self.coef_start_q + g] = rhs[g] * self.inv_weights_q[g];
+        // Divide by diagonal
+        for (h, (&r, &inv_w)) in rhs.iter().zip(self.inv_weights_q.iter()).enumerate() {
+            z[self.coef_start_q + h] = r * inv_w;
         }
     }
 }
@@ -382,12 +381,16 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner {
         // Initialize z = 0 for GS iteration (solving M*z = x)
         z.iter_mut().for_each(|v| *v = 0.0);
 
+        // Get scratch buffers
+        let mut scratch_p = self.scratch_p.lock().unwrap();
+        let mut scratch_q = self.scratch_q.lock().unwrap();
+
         // Perform inner_iters Gauss-Seidel iterations on the 2-FE subsystem
         // Each sweep uses the original input x as the RHS
         // Forward order: p then q
         for _ in 0..self.inner_iters {
-            self.sweep_p(x, z);
-            self.sweep_q(x, z);
+            self.sweep_p(x, z, &mut scratch_p);
+            self.sweep_q(x, z, &mut scratch_q);
         }
 
         // Copy non-preconditioned coefficients (other FEs) from input
@@ -413,10 +416,14 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner {
 
         z.iter_mut().for_each(|v| *v = 0.0);
 
+        // Get scratch buffers
+        let mut scratch_p = self.scratch_p.lock().unwrap();
+        let mut scratch_q = self.scratch_q.lock().unwrap();
+
         // Reverse order: q then p
         for _ in 0..self.inner_iters {
-            self.sweep_q(x, z);
-            self.sweep_p(x, z);
+            self.sweep_q(x, z, &mut scratch_q);
+            self.sweep_p(x, z, &mut scratch_p);
         }
 
         // Copy non-preconditioned coefficients from input
@@ -490,6 +497,277 @@ fn compute_pair_density(
 }
 
 // =============================================================================
+// P4: Sparse Gram Preconditioner
+// =============================================================================
+
+/// Sparse Gram preconditioner using Gauss-Seidel on sparse cross-correlation.
+///
+/// Similar to TwoBlockStreamingPreconditioner, but uses sparse matrix-vector
+/// products instead of streaming over observations. This makes each GS sweep
+/// O(nnz) where nnz is the number of non-zero entries in M_pq = D_p^T D_q,
+/// rather than O(n_obs) for streaming.
+///
+/// For problems where nnz << n_obs (many groups have no shared observations),
+/// this can be significantly faster.
+///
+/// # Cost
+/// - Construction: O(n_obs) to build sparse cross-correlation matrix
+/// - Apply: O((n_groups_p + n_groups_q + nnz) × inner_iters)
+pub struct SparseGramPreconditioner {
+    /// Coefficient start offset for FE p
+    coef_start_p: usize,
+    /// Coefficient start offset for FE q
+    coef_start_q: usize,
+    /// Number of groups in FE p
+    n_groups_p: usize,
+    /// Number of groups in FE q
+    n_groups_q: usize,
+    /// Inverse group weights for FE p (1/count)
+    inv_diag_p: Vec<f64>,
+    /// Inverse group weights for FE q (1/count)
+    inv_diag_q: Vec<f64>,
+    /// Sparse CSR matrix M_pq = D_p^T D_q
+    mpq_row_ptr: Vec<usize>,
+    mpq_col_idx: Vec<usize>,
+    mpq_values: Vec<f64>,
+    /// Sparse CSR matrix M_qp = M_pq^T
+    mqp_row_ptr: Vec<usize>,
+    mqp_col_idx: Vec<usize>,
+    mqp_values: Vec<f64>,
+    /// Number of inner GS iterations
+    inner_iters: usize,
+    /// Scratch buffers (protected by Mutex for interior mutability)
+    scratch: std::sync::Mutex<SparseGSScratch>,
+}
+
+/// Scratch buffers for sparse GS iterations.
+struct SparseGSScratch {
+    z_p: Vec<f64>,
+    z_q: Vec<f64>,
+    temp_p: Vec<f64>,  // temp storage for M_pq @ z_q
+    temp_q: Vec<f64>,  // temp storage for M_qp @ z_p
+}
+
+impl SparseGramPreconditioner {
+    /// Create a sparse Gram preconditioner.
+    pub fn new(
+        ctx: &DemeanContext,
+        fe_p: Option<usize>,
+        fe_q: Option<usize>,
+        inner_iters: usize,
+    ) -> Self {
+        // Auto-select FE pair if not specified
+        let (p, q) = match (fe_p, fe_q) {
+            (Some(p), Some(q)) => (p, q),
+            _ => select_best_fe_pair(ctx),
+        };
+
+        let fe_p_info = &ctx.fe_infos[p];
+        let fe_q_info = &ctx.fe_infos[q];
+
+        let n_groups_p = fe_p_info.n_groups;
+        let n_groups_q = fe_q_info.n_groups;
+
+        // Store inverse diagonal (1/count) for GS sweeps
+        let inv_diag_p: Vec<f64> = fe_p_info.inv_group_weights.to_vec();
+        let inv_diag_q: Vec<f64> = fe_q_info.inv_group_weights.to_vec();
+
+        // Build sparse CSR representation of M_pq = D_p^T D_q
+        use std::collections::HashMap;
+        let mut pq_counts: HashMap<(usize, usize), f64> = HashMap::new();
+
+        for (&gp, &gq) in fe_p_info.group_ids.iter().zip(fe_q_info.group_ids.iter()) {
+            *pq_counts.entry((gp, gq)).or_insert(0.0) += 1.0;
+        }
+
+        // Build CSR for M_pq
+        let mut mpq_row_ptr = vec![0usize; n_groups_p + 1];
+        let mut mpq_entries: Vec<(usize, usize, f64)> = pq_counts
+            .iter()
+            .map(|(&(gp, gq), &count)| (gp, gq, count))
+            .collect();
+        mpq_entries.sort_by_key(|&(gp, gq, _)| (gp, gq));
+
+        for &(gp, _, _) in &mpq_entries {
+            mpq_row_ptr[gp + 1] += 1;
+        }
+        for i in 1..=n_groups_p {
+            mpq_row_ptr[i] += mpq_row_ptr[i - 1];
+        }
+
+        let mpq_col_idx: Vec<usize> = mpq_entries.iter().map(|&(_, gq, _)| gq).collect();
+        let mpq_values: Vec<f64> = mpq_entries.iter().map(|&(_, _, v)| v).collect();
+
+        // Build CSR for M_qp (transpose)
+        let mut mqp_row_ptr = vec![0usize; n_groups_q + 1];
+        let mut mqp_entries: Vec<(usize, usize, f64)> = pq_counts
+            .iter()
+            .map(|(&(gp, gq), &count)| (gq, gp, count))
+            .collect();
+        mqp_entries.sort_by_key(|&(gq, gp, _)| (gq, gp));
+
+        for &(gq, _, _) in &mqp_entries {
+            mqp_row_ptr[gq + 1] += 1;
+        }
+        for i in 1..=n_groups_q {
+            mqp_row_ptr[i] += mqp_row_ptr[i - 1];
+        }
+
+        let mqp_col_idx: Vec<usize> = mqp_entries.iter().map(|&(_, gp, _)| gp).collect();
+        let mqp_values: Vec<f64> = mqp_entries.iter().map(|&(_, _, v)| v).collect();
+
+        // Initialize scratch buffers
+        let scratch = SparseGSScratch {
+            z_p: vec![0.0; n_groups_p],
+            z_q: vec![0.0; n_groups_q],
+            temp_p: vec![0.0; n_groups_p],
+            temp_q: vec![0.0; n_groups_q],
+        };
+
+        Self {
+            coef_start_p: fe_p_info.coef_start,
+            coef_start_q: fe_q_info.coef_start,
+            n_groups_p,
+            n_groups_q,
+            inv_diag_p,
+            inv_diag_q,
+            mpq_row_ptr,
+            mpq_col_idx,
+            mpq_values,
+            mqp_row_ptr,
+            mqp_col_idx,
+            mqp_values,
+            inner_iters,
+            scratch: std::sync::Mutex::new(scratch),
+        }
+    }
+
+    /// Sparse matrix-vector product: y = M_pq @ x_q
+    #[inline]
+    fn mpq_matvec(&self, x_q: &[f64], y_p: &mut [f64]) {
+        for (i, y_i) in y_p.iter_mut().enumerate() {
+            let start = self.mpq_row_ptr[i];
+            let end = self.mpq_row_ptr[i + 1];
+            let mut sum = 0.0;
+            for idx in start..end {
+                let j = self.mpq_col_idx[idx];
+                sum += self.mpq_values[idx] * x_q[j];
+            }
+            *y_i = sum;
+        }
+    }
+
+    /// Sparse matrix-vector product: y = M_qp @ x_p
+    #[inline]
+    fn mqp_matvec(&self, x_p: &[f64], y_q: &mut [f64]) {
+        for (i, y_i) in y_q.iter_mut().enumerate() {
+            let start = self.mqp_row_ptr[i];
+            let end = self.mqp_row_ptr[i + 1];
+            let mut sum = 0.0;
+            for idx in start..end {
+                let j = self.mqp_col_idx[idx];
+                sum += self.mqp_values[idx] * x_p[j];
+            }
+            *y_i = sum;
+        }
+    }
+}
+
+impl RightPreconditioner for SparseGramPreconditioner {
+    fn apply(&self, x: &[f64], z: &mut [f64]) {
+        let mut scratch = self.scratch.lock().unwrap();
+        let SparseGSScratch {
+            z_p,
+            z_q,
+            temp_p,
+            temp_q,
+        } = &mut *scratch;
+
+        // Extract x_p and x_q from the full coefficient vector
+        let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
+        let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
+
+        // Initialize z_p, z_q = 0
+        z_p.iter_mut().for_each(|v| *v = 0.0);
+        z_q.iter_mut().for_each(|v| *v = 0.0);
+
+        // Perform inner_iters Gauss-Seidel iterations using sparse matvec
+        // Solving: diag(count_p) @ z_p + M_pq @ z_q = x_p
+        //          M_qp @ z_p + diag(count_q) @ z_q = x_q
+        for _ in 0..self.inner_iters {
+            // sweep_p: z_p = (x_p - M_pq @ z_q) * inv_diag_p
+            self.mpq_matvec(z_q, temp_p);
+            for ((z_i, &t), (&x_i, &inv_d)) in z_p
+                .iter_mut()
+                .zip(temp_p.iter())
+                .zip(x_p.iter().zip(self.inv_diag_p.iter()))
+            {
+                *z_i = (x_i - t) * inv_d;
+            }
+
+            // sweep_q: z_q = (x_q - M_qp @ z_p) * inv_diag_q
+            self.mqp_matvec(z_p, temp_q);
+            for ((z_i, &t), (&x_i, &inv_d)) in z_q
+                .iter_mut()
+                .zip(temp_q.iter())
+                .zip(x_q.iter().zip(self.inv_diag_q.iter()))
+            {
+                *z_i = (x_i - t) * inv_d;
+            }
+        }
+
+        // Copy result back to z, pass through other coefficients
+        z.copy_from_slice(x);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(z_p);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(z_q);
+    }
+
+    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+        // Transpose of GS requires reversing sweep order (q then p)
+        let mut scratch = self.scratch.lock().unwrap();
+        let SparseGSScratch {
+            z_p,
+            z_q,
+            temp_p,
+            temp_q,
+        } = &mut *scratch;
+
+        let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
+        let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
+
+        z_p.iter_mut().for_each(|v| *v = 0.0);
+        z_q.iter_mut().for_each(|v| *v = 0.0);
+
+        // Reverse order: q then p
+        for _ in 0..self.inner_iters {
+            // sweep_q first
+            self.mqp_matvec(z_p, temp_q);
+            for ((z_i, &t), (&x_i, &inv_d)) in z_q
+                .iter_mut()
+                .zip(temp_q.iter())
+                .zip(x_q.iter().zip(self.inv_diag_q.iter()))
+            {
+                *z_i = (x_i - t) * inv_d;
+            }
+
+            // sweep_p second
+            self.mpq_matvec(z_q, temp_p);
+            for ((z_i, &t), (&x_i, &inv_d)) in z_p
+                .iter_mut()
+                .zip(temp_p.iter())
+                .zip(x_p.iter().zip(self.inv_diag_p.iter()))
+            {
+                *z_i = (x_i - t) * inv_d;
+            }
+        }
+
+        z.copy_from_slice(x);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(z_p);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(z_q);
+    }
+}
+
+// =============================================================================
 // Preconditioner Configuration
 // =============================================================================
 
@@ -525,6 +803,17 @@ pub enum PreconditionerKind {
         /// Number of inner Gauss-Seidel iterations
         inner_iters: usize,
     },
+
+    /// Sparse Gram preconditioner using CG iterations (P4).
+    /// Builds sparse 2x2 block Gram matrix and uses PCG to solve.
+    SparseGram {
+        /// First FE index (or None for auto-select)
+        fe_p: Option<usize>,
+        /// Second FE index (or None for auto-select)
+        fe_q: Option<usize>,
+        /// Number of inner CG iterations
+        inner_iters: usize,
+    },
 }
 
 /// Boxed preconditioner for runtime polymorphism.
@@ -549,6 +838,14 @@ pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> B
             // Use streaming GS alone - it already approximates M^{-1} directly
             // Composing with diagonal scaling changes the normal equations structure
             Box::new(TwoBlockStreamingPreconditioner::new(ctx, fe_p, fe_q, inner_iters))
+        }
+        PreconditionerKind::SparseGram {
+            fe_p,
+            fe_q,
+            inner_iters,
+        } => {
+            // Use sparse Gram preconditioner with PCG inner solver
+            Box::new(SparseGramPreconditioner::new(ctx, fe_p, fe_q, inner_iters))
         }
     }
 }
