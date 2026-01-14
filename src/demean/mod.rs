@@ -199,7 +199,7 @@ pub(crate) fn demean(
 /// * `maxiter` - Maximum iterations (default: 100_000)
 /// * `reorder_fe` - Whether to reorder FEs by size (default: false)
 /// * `solver` - Solver algorithm: "gauss_seidel" (default) or "lsmr"
-/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming", "sparse_gram"
+/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming", "sparse_gram", "laplacian"
 ///
 /// # Returns
 ///
@@ -249,9 +249,17 @@ pub fn _demean_rs<'py>(
             fe_q: None,
             inner_iters: 5,
         },
+        // EXPERIMENTAL: Laplacian preconditioner has known convergence issues
+        // with arbitrary Krylov vectors. Use "sparse_gram" instead.
+        "laplacian" => PreconditionerKind::Laplacian {
+            fe_p: None,
+            fe_q: None,
+            k_inner: 10,
+            aggregate_edges: false,
+        },
         _ => {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', 'streaming', or 'sparse_gram'.",
+                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', 'streaming', 'sparse_gram', or 'laplacian'.",
                 lsmr_preconditioner
             )))
         }

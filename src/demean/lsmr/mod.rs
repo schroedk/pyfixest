@@ -72,7 +72,7 @@ impl Demeaner for LSMRDemeaner<'_> {
 
         debug_assert_eq!(input.len(), n_obs);
 
-        // Create the linear operator
+        // Create the linear operator (handles sqrt(weights) scaling internally)
         let base_operator = DesignMatrixOperator::new(self.ctx);
 
         // Create kernel config from our config
@@ -82,20 +82,34 @@ impl Demeaner for LSMRDemeaner<'_> {
             conlim: 1e8,
         };
 
+        // For weighted least squares, we solve min ||W^{1/2}(b - Dx)||
+        // which transforms to min ||b̃ - Ãx|| where:
+        // - Ã = W^{1/2} D (handled by DesignMatrixOperator)
+        // - b̃ = W^{1/2} b (we scale input here)
+        let scaled_input: Vec<f64> = match &self.ctx.weights {
+            Some(w) => input
+                .iter()
+                .zip(w.iter())
+                .map(|(&inp, &wi)| inp * wi.sqrt())
+                .collect(),
+            None => input.to_vec(),
+        };
+
         // Solve using right-preconditioned LSMR:
-        // min ||A * M^{-1} * z - b||, then recover coef = M^{-1} * z
+        // min ||Ã * M^{-1} * z - b̃||, then recover coef = M^{-1} * z
         let precond_operator =
             PreconditionedOperator::new(&base_operator, self.preconditioner.as_ref());
 
         let mut kernel = LSMRKernel::new(kernel_config, &mut self.buffers);
         let mut z = vec![0.0; n_coef]; // Preconditioned variable
-        let result = kernel.solve(&precond_operator, input, &mut z);
+        let result = kernel.solve(&precond_operator, &scaled_input, &mut z);
 
         // Recover actual coefficients: coef = M^{-1} * z
         let mut coef = vec![0.0; n_coef];
         self.preconditioner.apply(&z, &mut coef);
 
         // Compute demeaned output: demeaned = input - D * coef
+        // Note: We use the original input here, not scaled_input
         let mut demeaned = input.to_vec();
         for fe in &self.ctx.fe_infos {
             let offset = fe.coef_start;

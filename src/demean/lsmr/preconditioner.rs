@@ -14,6 +14,10 @@
 //! For symmetric preconditioners, M^{-T} = M^{-1}.
 
 use crate::demean::types::DemeanContext;
+use crate::graph::components::ComponentsCSR;
+use crate::graph::union_find::UnionFind;
+use crate::laplacian::LaplacianOp;
+use crate::support_tree::{FixedPCG, SpanningForest};
 
 /// Right preconditioner for LSMR.
 ///
@@ -768,6 +772,167 @@ impl RightPreconditioner for SparseGramPreconditioner {
 }
 
 // =============================================================================
+// P5: Two-FE Laplacian Preconditioner (Support-Graph / Tree-PCG)
+// =============================================================================
+
+/// Two-FE Laplacian preconditioner using support-graph PCG.
+///
+/// This preconditioner builds a spanning forest for the bipartite 2-FE graph
+/// and uses tree-based Laplacian solves as a preconditioner within fixed-iteration
+/// PCG. The key insight is that tree Laplacians can be solved in O(V) time.
+///
+/// # Algorithm
+/// 1. Extract 2-FE pair coefficients from global coefficient vector
+/// 2. Run fixed-iteration PCG on the graph Laplacian: `x ≈ L^{-1} * rhs`
+/// 3. Write solution back to global coefficient vector
+///
+/// # Cost
+/// - Construction: O(n_obs) for forest building
+/// - Apply: O(V * k_inner) where V = Kp + Kq
+pub struct TwoFeLaplacianPreconditioner {
+    /// Index of first FE in the 2-block subsystem
+    #[allow(dead_code)]
+    fe_p: usize,
+    /// Index of second FE in the 2-block subsystem
+    #[allow(dead_code)]
+    fe_q: usize,
+    /// Coefficient start offset for FE p in global coefficient vector
+    coef_start_p: usize,
+    /// Coefficient start offset for FE q in global coefficient vector
+    coef_start_q: usize,
+    /// Number of groups in FE p
+    kp: usize,
+    /// Number of groups in FE q
+    kq: usize,
+    /// Total nodes in Laplacian: V = kp + kq
+    v: usize,
+    /// The Laplacian operator (owns edge representation and components)
+    laplacian: LaplacianOp,
+    /// The spanning forest for tree preconditioning
+    forest: SpanningForest,
+    /// Connected components for gauge projection
+    components: ComponentsCSR,
+    /// Fixed-iteration PCG solver (uses Mutex for interior mutability)
+    pcg: std::sync::Mutex<FixedPCG>,
+    /// Scratch buffer for local RHS (length V)
+    rhs_scratch: std::sync::Mutex<Vec<f64>>,
+    /// Scratch buffer for local solution (length V)
+    sol_scratch: std::sync::Mutex<Vec<f64>>,
+}
+
+impl TwoFeLaplacianPreconditioner {
+    /// Create a two-FE Laplacian preconditioner.
+    ///
+    /// # Arguments
+    /// * `ctx` - DemeanContext with FE information
+    /// * `fe_p` - First FE index (or None for auto-select)
+    /// * `fe_q` - Second FE index (or None for auto-select)
+    /// * `k_inner` - Number of inner PCG iterations (typically 5-15)
+    /// * `aggregate_edges` - Whether to use aggregated edge representation
+    pub fn new(
+        ctx: &DemeanContext,
+        fe_p: Option<usize>,
+        fe_q: Option<usize>,
+        k_inner: usize,
+        aggregate_edges: bool,
+    ) -> Self {
+        // Auto-select FE pair if not specified
+        let (p, q) = match (fe_p, fe_q) {
+            (Some(p), Some(q)) => (p, q),
+            _ => select_best_fe_pair(ctx),
+        };
+
+        let fe_p_info = &ctx.fe_infos[p];
+        let fe_q_info = &ctx.fe_infos[q];
+
+        let kp = fe_p_info.n_groups;
+        let kq = fe_q_info.n_groups;
+        let v = kp + kq;
+
+        // Build connected components
+        let mut uf = UnionFind::new(v);
+        for (&gp, &gq) in fe_p_info.group_ids.iter().zip(fe_q_info.group_ids.iter()) {
+            uf.union(gp, kp + gq);
+        }
+        let components = ComponentsCSR::from_union_find(&mut uf, v);
+
+        // Build Laplacian operator
+        let laplacian = if aggregate_edges {
+            LaplacianOp::new_aggregated(
+                &fe_p_info.group_ids,
+                &fe_q_info.group_ids,
+                kp,
+                kq,
+                None, // TODO: support weighted edges
+            )
+        } else {
+            LaplacianOp::new_streaming(
+                fe_p_info.group_ids.clone(),
+                fe_q_info.group_ids.clone(),
+                kp,
+                kq,
+                None, // TODO: support weighted edges
+            )
+        };
+
+        // Build spanning forest
+        let forest = SpanningForest::build_simple(
+            &fe_p_info.group_ids,
+            &fe_q_info.group_ids,
+            kp,
+            kq,
+            None,
+            &components,
+        );
+
+        // Create PCG solver (pass kp for sign transformation)
+        let pcg = FixedPCG::new(v, kp, k_inner);
+
+        Self {
+            fe_p: p,
+            fe_q: q,
+            coef_start_p: fe_p_info.coef_start,
+            coef_start_q: fe_q_info.coef_start,
+            kp,
+            kq,
+            v,
+            laplacian,
+            forest,
+            components,
+            pcg: std::sync::Mutex::new(pcg),
+            rhs_scratch: std::sync::Mutex::new(vec![0.0; v]),
+            sol_scratch: std::sync::Mutex::new(vec![0.0; v]),
+        }
+    }
+}
+
+impl RightPreconditioner for TwoFeLaplacianPreconditioner {
+    fn apply(&self, x: &[f64], z: &mut [f64]) {
+        // 1. Initialize z = x (pass through non-pair coefficients)
+        z.copy_from_slice(x);
+
+        // 2. Extract pair coefficients into local RHS
+        let mut rhs = self.rhs_scratch.lock().unwrap();
+        let mut sol = self.sol_scratch.lock().unwrap();
+
+        // Copy FE p coefficients to local nodes 0..kp
+        rhs[..self.kp].copy_from_slice(&x[self.coef_start_p..self.coef_start_p + self.kp]);
+        // Copy FE q coefficients to local nodes kp..v
+        rhs[self.kp..].copy_from_slice(&x[self.coef_start_q..self.coef_start_q + self.kq]);
+
+        // 3. Run fixed-iter PCG: sol ≈ L^{-1} * rhs
+        let mut pcg = self.pcg.lock().unwrap();
+        pcg.solve(&self.laplacian, &self.forest, &self.components, &rhs, &mut sol);
+
+        // 4. Write solution back to z at pair coordinates
+        z[self.coef_start_p..self.coef_start_p + self.kp].copy_from_slice(&sol[..self.kp]);
+        z[self.coef_start_q..self.coef_start_q + self.kq].copy_from_slice(&sol[self.kp..]);
+    }
+
+    // apply_transpose: same as apply (symmetric preconditioner)
+}
+
+// =============================================================================
 // Preconditioner Configuration
 // =============================================================================
 
@@ -814,6 +979,24 @@ pub enum PreconditionerKind {
         /// Number of inner CG iterations
         inner_iters: usize,
     },
+
+    /// Two-FE Laplacian preconditioner using support-graph PCG (P5).
+    /// Builds spanning forest and uses tree-preconditioned CG.
+    ///
+    /// **WARNING**: This preconditioner is experimental and has known convergence
+    /// issues. The tree Gram solver only works correctly for vectors in Range(G),
+    /// but LSMR applies it to arbitrary Krylov vectors. Use `SparseGram` instead
+    /// for reliable results.
+    Laplacian {
+        /// First FE index (or None for auto-select)
+        fe_p: Option<usize>,
+        /// Second FE index (or None for auto-select)
+        fe_q: Option<usize>,
+        /// Number of inner PCG iterations
+        k_inner: usize,
+        /// Whether to use aggregated edges (vs streaming)
+        aggregate_edges: bool,
+    },
 }
 
 /// Boxed preconditioner for runtime polymorphism.
@@ -846,6 +1029,21 @@ pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> B
         } => {
             // Use sparse Gram preconditioner with PCG inner solver
             Box::new(SparseGramPreconditioner::new(ctx, fe_p, fe_q, inner_iters))
+        }
+        PreconditionerKind::Laplacian {
+            fe_p,
+            fe_q,
+            k_inner,
+            aggregate_edges,
+        } => {
+            // Use Laplacian preconditioner with tree-preconditioned PCG
+            Box::new(TwoFeLaplacianPreconditioner::new(
+                ctx,
+                fe_p,
+                fe_q,
+                k_inner,
+                aggregate_edges,
+            ))
         }
     }
 }

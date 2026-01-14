@@ -4,6 +4,15 @@
 //! matrix-vector products needed by LSMR. The `DesignMatrixOperator` wraps
 //! `DemeanContext` to provide these operations using the existing scatter/gather
 //! infrastructure.
+//!
+//! # Weighted Least Squares
+//!
+//! For weighted least squares `min ||W^{1/2}(b - Dx)||²`, we transform the problem
+//! to `min ||b̃ - Ãx||²` where:
+//! - `Ã = W^{1/2} D` (effective matrix)
+//! - `b̃ = W^{1/2} b` (effective RHS)
+//!
+//! This gives the correct normal equations `D^T W D x = D^T W b`.
 
 use crate::demean::types::DemeanContext;
 
@@ -39,23 +48,34 @@ pub trait LinearOperator {
 
 /// Design matrix operator wrapping `DemeanContext`.
 ///
-/// This adapts the existing gather/scatter operations as a `LinearOperator`.
-/// The design matrix D has one-hot columns for each fixed effect group.
+/// For weighted problems, this implements `Ã = W^{1/2} D` where W = diag(weights).
+/// For unweighted problems (ctx.weights = None), this is just D.
+///
+/// The operator provides:
+/// - `matvec(x)`: `W^{1/2} D x` - gather coefficients, scale by sqrt(weights)
+/// - `rmatvec(y)`: `D^T W^{1/2} y` - scale by sqrt(weights), scatter to coefficients
+///
+/// This ensures the LSMR algorithm solves the correct weighted least squares problem.
 ///
 /// # Example
 ///
 /// With 2 FEs (firm, year) and coefficients laid out as `[firm_0..firm_K, year_0..year_T]`:
-/// - `matvec(coef, y)`: For each observation i, y[i] = coef[firm[i]] + coef[K + year[i]]
-/// - `rmatvec(y, coef)`: Accumulate y values to their respective group coefficients
+/// - Unweighted: `y[i] = coef[firm[i]] + coef[K + year[i]]`
+/// - Weighted: `y[i] = sqrt(w[i]) * (coef[firm[i]] + coef[K + year[i]])`
 pub struct DesignMatrixOperator<'a> {
     ctx: &'a DemeanContext,
+    /// Precomputed sqrt(weights) for weighted case, None for unweighted
+    sqrt_weights: Option<Vec<f64>>,
 }
 
 impl<'a> DesignMatrixOperator<'a> {
     /// Create a new design matrix operator from a `DemeanContext`.
+    ///
+    /// Precomputes sqrt(weights) for efficient weighted operations.
     #[inline]
     pub fn new(ctx: &'a DemeanContext) -> Self {
-        Self { ctx }
+        let sqrt_weights = ctx.weights.as_ref().map(|w| w.iter().map(|&wi| wi.sqrt()).collect());
+        Self { ctx, sqrt_weights }
     }
 }
 
@@ -75,9 +95,17 @@ impl LinearOperator for DesignMatrixOperator<'_> {
         debug_assert_eq!(x.len(), self.cols(), "x length mismatch");
         debug_assert_eq!(y.len(), self.rows(), "y length mismatch");
 
-        // y = D * x: gather coefficients to observation space
+        // y = W^{1/2} D x: gather coefficients to observation space, scale by sqrt(weights)
         y.fill(0.0);
+        // First gather: y = D * x
         self.ctx.apply_design_matrix(x, y);
+
+        // Then scale by sqrt(weights) if weighted
+        if let Some(ref sqrt_w) = self.sqrt_weights {
+            for (yi, &swi) in y.iter_mut().zip(sqrt_w.iter()) {
+                *yi *= swi;
+            }
+        }
     }
 
     #[inline]
@@ -85,8 +113,41 @@ impl LinearOperator for DesignMatrixOperator<'_> {
         debug_assert_eq!(y.len(), self.rows(), "y length mismatch");
         debug_assert_eq!(x.len(), self.cols(), "x length mismatch");
 
-        // x = D^T * y: scatter observations to coefficient space
-        self.ctx.apply_design_matrix_t(y, x);
+        // x = D^T W^{1/2} y: scale by sqrt(weights), then scatter to coefficient space
+        match &self.sqrt_weights {
+            None => {
+                // Unweighted: x = D^T y (use the unweighted scatter)
+                self.apply_design_matrix_t_unweighted(y, x);
+            }
+            Some(sqrt_w) => {
+                // Weighted: x = D^T (W^{1/2} y) = sum_i sqrt(w_i) * y_i * indicator(group)
+                self.apply_design_matrix_t_sqrt_weighted(y, sqrt_w, x);
+            }
+        }
+    }
+}
+
+impl DesignMatrixOperator<'_> {
+    /// Unweighted transpose: x = D^T y
+    fn apply_design_matrix_t_unweighted(&self, y: &[f64], x: &mut [f64]) {
+        x.fill(0.0);
+        for fe in &self.ctx.fe_infos {
+            let offset = fe.coef_start;
+            for (i, &g) in fe.group_ids.iter().enumerate() {
+                x[offset + g] += y[i];
+            }
+        }
+    }
+
+    /// Sqrt-weighted transpose: x = D^T W^{1/2} y
+    fn apply_design_matrix_t_sqrt_weighted(&self, y: &[f64], sqrt_w: &[f64], x: &mut [f64]) {
+        x.fill(0.0);
+        for fe in &self.ctx.fe_infos {
+            let offset = fe.coef_start;
+            for (i, &g) in fe.group_ids.iter().enumerate() {
+                x[offset + g] += y[i] * sqrt_w[i];
+            }
+        }
     }
 }
 
