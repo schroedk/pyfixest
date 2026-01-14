@@ -24,6 +24,7 @@ def _demean_rs(
     maxiter: int = 100_000,
     reorder_fe: bool = False,
     solver: str = "gauss_seidel",
+    lsmr_preconditioner: str = "diagonal",
 ) -> DemeanResult: ...
 def _count_fixef_fully_nested_all_rs(
     all_fixef_array: NDArray,

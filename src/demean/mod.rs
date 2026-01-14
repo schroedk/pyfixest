@@ -35,6 +35,7 @@ mod sweep;
 pub mod types;
 
 use demeaner::{Demeaner, MultiFEDemeaner, SingleFEDemeaner, TwoFEDemeaner};
+use lsmr::preconditioner::PreconditionerKind;
 use lsmr::LSMRDemeaner;
 use types::{
     ConvergenceState, DemeanContext, DemeanMultiResult, DemeanResult, FixestConfig, LSMRConfig,
@@ -117,6 +118,7 @@ pub(crate) fn demean(
     maxiter: usize,
     reorder_fe: bool,
     solver: SolverKind,
+    lsmr_config: LSMRConfig,
 ) -> DemeanMultiResult {
     let (n_samples, n_features) = x.dim();
 
@@ -125,12 +127,6 @@ pub(crate) fn demean(
         maxiter,
         reorder_fe,
         ..FixestConfig::default()
-    };
-
-    let lsmr_config = LSMRConfig {
-        tol,
-        maxiter,
-        ..LSMRConfig::default()
     };
 
     let not_converged = Arc::new(AtomicUsize::new(0));
@@ -203,6 +199,7 @@ pub(crate) fn demean(
 /// * `maxiter` - Maximum iterations (default: 100_000)
 /// * `reorder_fe` - Whether to reorder FEs by size (default: false)
 /// * `solver` - Solver algorithm: "gauss_seidel" (default) or "lsmr"
+/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming"
 ///
 /// # Returns
 ///
@@ -211,7 +208,7 @@ pub(crate) fn demean(
 /// - "fe_coefficients": Array of FE coefficients (n_coef, n_features)
 /// - "success": Boolean indicating convergence
 #[pyfunction]
-#[pyo3(signature = (x, flist, weights=None, tol=1e-8, maxiter=100_000, reorder_fe=false, solver="gauss_seidel"))]
+#[pyo3(signature = (x, flist, weights=None, tol=1e-8, maxiter=100_000, reorder_fe=false, solver="gauss_seidel", lsmr_preconditioner="diagonal"))]
 pub fn _demean_rs<'py>(
     py: Python<'py>,
     x: PyReadonlyArray2<f64>,
@@ -221,6 +218,7 @@ pub fn _demean_rs<'py>(
     maxiter: usize,
     reorder_fe: bool,
     solver: &str,
+    lsmr_preconditioner: &str,
 ) -> PyResult<Bound<'py, PyDict>> {
     let x_arr = x.as_array();
     let flist_arr = flist.as_array();
@@ -237,6 +235,29 @@ pub fn _demean_rs<'py>(
         }
     };
 
+    let preconditioner_kind = match lsmr_preconditioner {
+        "none" => PreconditionerKind::None,
+        "diagonal" => PreconditionerKind::Diagonal,
+        "deflation" => PreconditionerKind::DiagonalPlusDeflation,
+        "streaming" => PreconditionerKind::TwoBlockStreaming {
+            fe_p: None,
+            fe_q: None,
+            inner_iters: 3,
+        },
+        _ => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', or 'streaming'.",
+                lsmr_preconditioner
+            )))
+        }
+    };
+
+    let lsmr_config = LSMRConfig {
+        tol,
+        maxiter,
+        preconditioner: preconditioner_kind,
+    };
+
     let result = py.detach(|| {
         demean(
             &x_arr,
@@ -246,6 +267,7 @@ pub fn _demean_rs<'py>(
             maxiter,
             reorder_fe,
             solver_kind,
+            lsmr_config,
         )
     });
 

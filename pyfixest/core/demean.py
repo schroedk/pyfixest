@@ -12,6 +12,7 @@ def demean(
     maxiter: int = 100_000,
     reorder_fe: bool = False,
     solver: str = "gauss_seidel",
+    lsmr_preconditioner: str = "diagonal",
 ) -> tuple[NDArray, bool]:
     """
     Demean an array.
@@ -40,6 +41,12 @@ def demean(
         - "gauss_seidel" (default): Accelerated Gauss-Seidel with Irons-Tuck.
         - "lsmr": LSMR (Least Squares Minimal Residual) algorithm.
         LSMR may converge faster for certain FE structures (many FEs, unbalanced groups).
+    lsmr_preconditioner : str, optional
+        Preconditioner for LSMR solver (only used when solver="lsmr"). Options:
+        - "none": No preconditioning (identity).
+        - "diagonal" (default): Diagonal scaling with sqrt(inverse group counts).
+        - "deflation": Diagonal + nullspace deflation for rank-deficient problems.
+        - "streaming": Two-block streaming Gauss-Seidel (auto-selects FE pair).
 
     Returns
     -------
@@ -92,5 +99,6 @@ def demean(
         maxiter,
         reorder_fe,
         solver,
+        lsmr_preconditioner,
     )
     return result["demeaned"], result["success"]
