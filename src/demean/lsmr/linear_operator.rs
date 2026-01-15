@@ -151,6 +151,114 @@ impl DesignMatrixOperator<'_> {
     }
 }
 
+// =============================================================================
+// Diagonal Preconditioned Operator (Fused)
+// =============================================================================
+
+/// Design matrix operator with fused diagonal preconditioning.
+///
+/// This operator fuses the diagonal preconditioner scaling into the gather/scatter
+/// operations, eliminating one pass over the coefficient vector per matvec/rmatvec.
+///
+/// Implements `Ã * M^{-1}` where:
+/// - `Ã = W^{1/2} D` (weighted design matrix)
+/// - `M^{-1} = diag(inv_sqrt_weights)` (diagonal preconditioner)
+///
+/// The fused operations are:
+/// - `matvec(x)`: `y[i] = sqrt_w[i] * sum_fe (x[offset+g] * inv_sqrt_weights[offset+g])`
+/// - `rmatvec(y)`: `x[j] = inv_sqrt_weights[j] * sum_i (sqrt_w[i] * y[i] * indicator[i,j])`
+pub struct DiagonalPreconditionedOperator<'a> {
+    ctx: &'a DemeanContext,
+    /// Precomputed sqrt(weights) for weighted case, None for unweighted
+    sqrt_weights: Option<Vec<f64>>,
+    /// Diagonal preconditioner weights: sqrt(1 / group_count) per coefficient
+    inv_sqrt_weights: Vec<f64>,
+}
+
+impl<'a> DiagonalPreconditionedOperator<'a> {
+    /// Create a new diagonal preconditioned operator.
+    pub fn new(ctx: &'a DemeanContext) -> Self {
+        let sqrt_weights = ctx.weights.as_ref().map(|w| w.iter().map(|&wi| wi.sqrt()).collect());
+
+        // Build inv_sqrt_weights from FE info (same as DiagonalPreconditioner)
+        let mut inv_sqrt_weights = Vec::with_capacity(ctx.dims.n_coef);
+        for fe in &ctx.fe_infos {
+            for &w in &fe.inv_group_weights {
+                inv_sqrt_weights.push(w.sqrt());
+            }
+        }
+
+        Self {
+            ctx,
+            sqrt_weights,
+            inv_sqrt_weights,
+        }
+    }
+}
+
+impl LinearOperator for DiagonalPreconditionedOperator<'_> {
+    #[inline]
+    fn rows(&self) -> usize {
+        self.ctx.dims.n_obs
+    }
+
+    #[inline]
+    fn cols(&self) -> usize {
+        self.ctx.dims.n_coef
+    }
+
+    fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
+        // Fused: y = W^{1/2} * D * M^{-1} * x
+        // y[i] = sqrt_w[i] * sum_fe (x[offset+g] * inv_sqrt_weights[offset+g])
+        y.fill(0.0);
+
+        // Fused gather with diagonal scaling
+        for fe in &self.ctx.fe_infos {
+            let offset = fe.coef_start;
+            for (i, &g) in fe.group_ids.iter().enumerate() {
+                let idx = offset + g;
+                y[i] += x[idx] * self.inv_sqrt_weights[idx];
+            }
+        }
+
+        // Apply observation weights if present
+        if let Some(ref sqrt_w) = self.sqrt_weights {
+            for (yi, &swi) in y.iter_mut().zip(sqrt_w.iter()) {
+                *yi *= swi;
+            }
+        }
+    }
+
+    fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
+        // Fused: x = M^{-T} * D^T * W^{1/2} * y = M^{-1} * D^T * W^{1/2} * y
+        // x[j] = inv_sqrt_weights[j] * sum_i (sqrt_w[i] * y[i] * indicator[i,j])
+        x.fill(0.0);
+
+        match &self.sqrt_weights {
+            None => {
+                // Unweighted: x[j] = inv_sqrt_weights[j] * sum_i y[i] * indicator[i,j]
+                for fe in &self.ctx.fe_infos {
+                    let offset = fe.coef_start;
+                    for (i, &g) in fe.group_ids.iter().enumerate() {
+                        let idx = offset + g;
+                        x[idx] += y[i] * self.inv_sqrt_weights[idx];
+                    }
+                }
+            }
+            Some(sqrt_w) => {
+                // Weighted: x[j] = inv_sqrt_weights[j] * sum_i sqrt_w[i] * y[i] * indicator[i,j]
+                for fe in &self.ctx.fe_infos {
+                    let offset = fe.coef_start;
+                    for (i, &g) in fe.group_ids.iter().enumerate() {
+                        let idx = offset + g;
+                        x[idx] += y[i] * sqrt_w[i] * self.inv_sqrt_weights[idx];
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Preconditioned operator: wraps A with right preconditioner M.
 ///
 /// Represents the operator `A * M^{-1}` for right-preconditioned LSMR.

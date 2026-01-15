@@ -27,8 +27,8 @@ use crate::demean::demeaner::Demeaner;
 use crate::demean::types::{ConvergenceState, DemeanContext, DemeanResult, LSMRConfig};
 use buffers::LSMRBuffers;
 use kernel::{LSMRConfig as KernelConfig, LSMRKernel};
-use linear_operator::{DesignMatrixOperator, PreconditionedOperator};
-use preconditioner::{create_preconditioner, BoxedPreconditioner};
+use linear_operator::{DesignMatrixOperator, DiagonalPreconditionedOperator, PreconditionedOperator};
+use preconditioner::{create_preconditioner, BoxedPreconditioner, PreconditionerKind};
 
 /// LSMR-based demeaner.
 ///
@@ -72,9 +72,6 @@ impl Demeaner for LSMRDemeaner<'_> {
 
         debug_assert_eq!(input.len(), n_obs);
 
-        // Create the linear operator (handles sqrt(weights) scaling internally)
-        let mut base_operator = DesignMatrixOperator::new(self.ctx);
-
         // Create kernel config from our config
         let kernel_config = KernelConfig {
             tol: self.config.tol,
@@ -97,12 +94,24 @@ impl Demeaner for LSMRDemeaner<'_> {
 
         // Solve using right-preconditioned LSMR:
         // min ||Ã * M^{-1} * z - b̃||, then recover coef = M^{-1} * z
-        let mut precond_operator =
-            PreconditionedOperator::new(&mut base_operator, self.preconditioner.as_mut());
-
-        let mut kernel = LSMRKernel::new(kernel_config, &mut self.buffers);
         let mut z = vec![0.0; n_coef]; // Preconditioned variable
-        let result = kernel.solve(&mut precond_operator, &scaled_input, &mut z);
+
+        let result = match self.config.preconditioner {
+            PreconditionerKind::Diagonal => {
+                // Use fused diagonal operator (eliminates scratch buffer pass)
+                let mut fused_operator = DiagonalPreconditionedOperator::new(self.ctx);
+                let mut kernel = LSMRKernel::new(kernel_config, &mut self.buffers);
+                kernel.solve(&mut fused_operator, &scaled_input, &mut z)
+            }
+            _ => {
+                // Use generic PreconditionedOperator for other preconditioners
+                let mut base_operator = DesignMatrixOperator::new(self.ctx);
+                let mut precond_operator =
+                    PreconditionedOperator::new(&mut base_operator, self.preconditioner.as_mut());
+                let mut kernel = LSMRKernel::new(kernel_config, &mut self.buffers);
+                kernel.solve(&mut precond_operator, &scaled_input, &mut z)
+            }
+        };
 
         // Recover actual coefficients: coef = M^{-1} * z
         let mut coef = vec![0.0; n_coef];
