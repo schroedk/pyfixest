@@ -36,14 +36,14 @@ pub trait LinearOperator {
     /// # Arguments
     /// * `x` - Input vector in column space (length: `cols()`)
     /// * `y` - Output vector in row space (length: `rows()`), overwritten
-    fn matvec(&self, x: &[f64], y: &mut [f64]);
+    fn matvec(&mut self, x: &[f64], y: &mut [f64]);
 
     /// Compute x = A^T * y (transpose multiplication).
     ///
     /// # Arguments
     /// * `y` - Input vector in row space (length: `rows()`)
     /// * `x` - Output vector in column space (length: `cols()`), overwritten
-    fn rmatvec(&self, y: &[f64], x: &mut [f64]);
+    fn rmatvec(&mut self, y: &[f64], x: &mut [f64]);
 }
 
 /// Design matrix operator wrapping `DemeanContext`.
@@ -91,7 +91,7 @@ impl LinearOperator for DesignMatrixOperator<'_> {
     }
 
     #[inline]
-    fn matvec(&self, x: &[f64], y: &mut [f64]) {
+    fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
         debug_assert_eq!(x.len(), self.cols(), "x length mismatch");
         debug_assert_eq!(y.len(), self.rows(), "y length mismatch");
 
@@ -109,7 +109,7 @@ impl LinearOperator for DesignMatrixOperator<'_> {
     }
 
     #[inline]
-    fn rmatvec(&self, y: &[f64], x: &mut [f64]) {
+    fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
         debug_assert_eq!(y.len(), self.rows(), "y length mismatch");
         debug_assert_eq!(x.len(), self.cols(), "x length mismatch");
 
@@ -156,20 +156,19 @@ impl DesignMatrixOperator<'_> {
 /// Represents the operator `A * M^{-1}` for right-preconditioned LSMR.
 /// We solve `min ||A * M^{-1} * z - b||`, then recover `x = M^{-1} * z`.
 pub struct PreconditionedOperator<'a, A> {
-    operator: &'a A,
-    preconditioner: &'a dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
+    operator: &'a mut A,
+    preconditioner: &'a mut dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
     /// Scratch buffer for M^{-1} * x (length: cols)
-    /// Uses RefCell for interior mutability since LinearOperator::matvec takes &self
-    scratch: std::cell::RefCell<Vec<f64>>,
+    scratch: Vec<f64>,
 }
 
 impl<'a, A: LinearOperator> PreconditionedOperator<'a, A> {
     /// Create a new preconditioned operator.
     pub fn new(
-        operator: &'a A,
-        preconditioner: &'a dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
+        operator: &'a mut A,
+        preconditioner: &'a mut dyn crate::demean::lsmr::preconditioner::RightPreconditioner,
     ) -> Self {
-        let scratch = std::cell::RefCell::new(vec![0.0; operator.cols()]);
+        let scratch = vec![0.0; operator.cols()];
         Self {
             operator,
             preconditioner,
@@ -189,23 +188,21 @@ impl<A: LinearOperator> LinearOperator for PreconditionedOperator<'_, A> {
         self.operator.cols()
     }
 
-    fn matvec(&self, x: &[f64], y: &mut [f64]) {
+    fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
         // y = A * M^{-1} * x
         // 1. scratch = M^{-1} * x
         // 2. y = A * scratch
-        let mut scratch = self.scratch.borrow_mut();
-        self.preconditioner.apply(x, &mut scratch);
-        self.operator.matvec(&scratch, y);
+        self.preconditioner.apply(x, &mut self.scratch);
+        self.operator.matvec(&self.scratch, y);
     }
 
-    fn rmatvec(&self, y: &[f64], x: &mut [f64]) {
+    fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
         // x = (A * M^{-1})^T * y = M^{-T} * A^T * y
         // For symmetric M: M^{-T} = M^{-1}
         // 1. scratch = A^T * y
         // 2. x = M^{-T} * scratch
-        let mut scratch = self.scratch.borrow_mut();
-        self.operator.rmatvec(y, &mut scratch);
-        self.preconditioner.apply_transpose(&scratch, x);
+        self.operator.rmatvec(y, &mut self.scratch);
+        self.preconditioner.apply_transpose(&self.scratch, x);
     }
 }
 
@@ -225,17 +222,17 @@ mod tests {
         fn cols(&self) -> usize {
             self.n
         }
-        fn matvec(&self, x: &[f64], y: &mut [f64]) {
+        fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
             y.copy_from_slice(x);
         }
-        fn rmatvec(&self, y: &[f64], x: &mut [f64]) {
+        fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
             x.copy_from_slice(y);
         }
     }
 
     #[test]
     fn test_identity_operator() {
-        let op = IdentityOp { n: 5 };
+        let mut op = IdentityOp { n: 5 };
         let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let mut y = vec![0.0; 5];
 

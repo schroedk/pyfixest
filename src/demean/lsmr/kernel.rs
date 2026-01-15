@@ -86,7 +86,7 @@ impl<'a> LSMRKernel<'a> {
     ///
     /// # Returns
     /// `LSMRResult` with convergence information.
-    pub fn solve<A: LinearOperator>(&mut self, operator: &A, b: &[f64], x: &mut [f64]) -> LSMRResult {
+    pub fn solve<A: LinearOperator>(&mut self, operator: &mut A, b: &[f64], x: &mut [f64]) -> LSMRResult {
         let n_obs = operator.rows();
         let n_coef = operator.cols();
 
@@ -203,7 +203,7 @@ impl<'a> LSMRKernel<'a> {
 
     /// One step of Golub-Kahan bidiagonalization.
     #[inline]
-    fn bidiagonalization_step<A: LinearOperator>(&mut self, operator: &A) {
+    fn bidiagonalization_step<A: LinearOperator>(&mut self, operator: &mut A) {
         // u = A * v - alpha * u
         operator.matvec(&self.buffers.v, &mut self.buffers.matvec_scratch);
         for (u_i, &s_i) in self.buffers.u.iter_mut().zip(self.buffers.matvec_scratch.iter()) {
@@ -337,12 +337,12 @@ mod tests {
         fn cols(&self) -> usize {
             self.diag.len()
         }
-        fn matvec(&self, x: &[f64], y: &mut [f64]) {
+        fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
             for ((y_i, &x_i), &d_i) in y.iter_mut().zip(x.iter()).zip(self.diag.iter()) {
                 *y_i = d_i * x_i;
             }
         }
-        fn rmatvec(&self, y: &[f64], x: &mut [f64]) {
+        fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
             // Diagonal is symmetric
             self.matvec(y, x);
         }
@@ -352,7 +352,7 @@ mod tests {
     fn test_lsmr_identity() {
         // Solve Ix = b where I is identity
         let n = 5;
-        let op = DiagonalOp {
+        let mut op = DiagonalOp {
             diag: vec![1.0; n],
         };
         let b = vec![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -362,7 +362,7 @@ mod tests {
         let mut buffers = LSMRBuffers::new(n, n);
         let mut kernel = LSMRKernel::new(config, &mut buffers);
 
-        let result = kernel.solve(&op, &b, &mut x);
+        let result = kernel.solve(&mut op, &b, &mut x);
 
         assert!(result.converged);
         for (i, (&x_i, &b_i)) in x.iter().zip(b.iter()).enumerate() {
@@ -380,7 +380,7 @@ mod tests {
     #[test]
     fn test_lsmr_diagonal() {
         // Solve diag(2,3,4) x = [2, 6, 12] → x = [1, 2, 3]
-        let op = DiagonalOp {
+        let mut op = DiagonalOp {
             diag: vec![2.0, 3.0, 4.0],
         };
         let b = vec![2.0, 6.0, 12.0];
@@ -391,7 +391,7 @@ mod tests {
         let mut buffers = LSMRBuffers::new(3, 3);
         let mut kernel = LSMRKernel::new(config, &mut buffers);
 
-        let result = kernel.solve(&op, &b, &mut x);
+        let result = kernel.solve(&mut op, &b, &mut x);
 
         assert!(result.converged);
         for (i, (&x_i, &e_i)) in x.iter().zip(expected.iter()).enumerate() {
@@ -409,7 +409,7 @@ mod tests {
     #[test]
     fn test_lsmr_zero_rhs() {
         // Solve Ax = 0 → x = 0
-        let op = DiagonalOp {
+        let mut op = DiagonalOp {
             diag: vec![1.0, 2.0, 3.0],
         };
         let b = vec![0.0, 0.0, 0.0];
@@ -419,7 +419,7 @@ mod tests {
         let mut buffers = LSMRBuffers::new(3, 3);
         let mut kernel = LSMRKernel::new(config, &mut buffers);
 
-        let result = kernel.solve(&op, &b, &mut x);
+        let result = kernel.solve(&mut op, &b, &mut x);
 
         assert!(result.converged);
         assert_eq!(result.iterations, 0);

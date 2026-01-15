@@ -76,6 +76,9 @@ pub struct TwoFEProjector<'a> {
     /// Computes beta from alpha
     beta_sweeper: TwoFESweeper<'a>,
 
+    // Precomputed RHS: D^T W y for each FE
+    coef_sums: &'a [f64],
+
     // Group ID pointers (needed for SSR computation)
     fe0_group_ids_ptr: *const usize,
     fe1_group_ids_ptr: *const usize,
@@ -102,23 +105,10 @@ impl<'a> TwoFEProjector<'a> {
             n0,
             n1,
             // alpha_sweeper: computes alpha from beta (out=fe0, other=fe1)
-            alpha_sweeper: TwoFESweeper::new(
-                ctx.dims.n_obs,
-                weights_ptr,
-                fe0_info,
-                fe1_info,
-                coef_sums,
-                0, // alpha starts at offset 0
-            ),
+            alpha_sweeper: TwoFESweeper::new(ctx.dims.n_obs, weights_ptr, fe0_info, fe1_info),
             // beta_sweeper: computes beta from alpha (out=fe1, other=fe0)
-            beta_sweeper: TwoFESweeper::new(
-                ctx.dims.n_obs,
-                weights_ptr,
-                fe1_info,
-                fe0_info,
-                coef_sums,
-                n0, // beta starts at offset n0
-            ),
+            beta_sweeper: TwoFESweeper::new(ctx.dims.n_obs, weights_ptr, fe1_info, fe0_info),
+            coef_sums,
             fe0_group_ids_ptr: fe0_info.group_ids.as_ptr(),
             fe1_group_ids_ptr: fe1_info.group_ids.as_ptr(),
             input,
@@ -136,10 +126,14 @@ impl Projector for TwoFEProjector<'_> {
     #[inline(always)]
     fn project(&mut self, coef_in: &[f64], coef_out: &mut [f64]) {
         // Step 1: alpha_in -> beta (stored in scratch)
-        self.beta_sweeper.sweep(&coef_in[..self.n0], &mut self.scratch);
+        // RHS for beta is coef_sums[n0..n0+n1]
+        self.beta_sweeper
+            .sweep(&self.coef_sums[self.n0..], &coef_in[..self.n0], &mut self.scratch);
 
         // Step 2: beta -> alpha_out
-        self.alpha_sweeper.sweep(&self.scratch, &mut coef_out[..self.n0]);
+        // RHS for alpha is coef_sums[0..n0]
+        self.alpha_sweeper
+            .sweep(&self.coef_sums[..self.n0], &self.scratch, &mut coef_out[..self.n0]);
 
         // Step 3: Copy beta to output
         coef_out[self.n0..self.n0 + self.n1].copy_from_slice(&self.scratch);
@@ -148,7 +142,8 @@ impl Projector for TwoFEProjector<'_> {
     #[inline(always)]
     fn compute_ssr(&mut self, coef: &[f64]) -> f64 {
         // Compute beta from alpha (updates self.scratch)
-        self.beta_sweeper.sweep(&coef[..self.n0], &mut self.scratch);
+        self.beta_sweeper
+            .sweep(&self.coef_sums[self.n0..], &coef[..self.n0], &mut self.scratch);
 
         // Compute SSR: Σ (input[i] - alpha[fe0[i]] - beta[fe1[i]])²
         let n_obs = self.n_obs;

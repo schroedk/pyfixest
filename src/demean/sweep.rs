@@ -20,9 +20,15 @@ use smallvec::SmallVec;
 /// - `alpha_sweeper`: computes alpha coefficients from beta
 /// - `beta_sweeper`: computes beta coefficients from alpha
 ///
-/// All data needed for the hot loop is precomputed at construction time
-/// to minimize indirection during iteration.
-pub(super) struct TwoFESweeper<'a> {
+/// The sweep formula is:
+/// ```text
+/// out[g] = (rhs[g] - Σᵢ other[other_groups[i]] * w[i]) * inv_weights[g]
+/// ```
+///
+/// All structural data is precomputed at construction time to minimize
+/// indirection during iteration. The RHS is passed at sweep time to allow
+/// reuse for different right-hand sides (e.g., demeaning vs preconditioning).
+pub(crate) struct TwoFESweeper<'a> {
     n_obs: usize,
     n_groups: usize,
 
@@ -32,13 +38,18 @@ pub(super) struct TwoFESweeper<'a> {
     // This side's data
     out_groups_ptr: *const usize,
     inv_group_weights_ptr: *const f64,
-    coef_sums_ptr: *const f64,
 
     // Other side's group IDs (for reading input coefficients)
     other_groups_ptr: *const usize,
 
     _phantom: std::marker::PhantomData<&'a ()>,
 }
+
+// SAFETY: TwoFESweeper only holds read-only pointers to data that lives for 'a.
+// The PhantomData<&'a ()> ensures the struct cannot outlive the data.
+// The sweep operation only reads from these pointers.
+unsafe impl Send for TwoFESweeper<'_> {}
+unsafe impl Sync for TwoFESweeper<'_> {}
 
 impl<'a> TwoFESweeper<'a> {
     /// Create a sweeper for computing `out_fe`'s coefficients from `other_fe`'s coefficients.
@@ -48,29 +59,13 @@ impl<'a> TwoFESweeper<'a> {
         weights_ptr: Option<*const f64>,
         out_fe: &'a FixedEffectInfo,
         other_fe: &'a FixedEffectInfo,
-        coef_sums: &'a [f64],
-        out_coef_start: usize,
     ) -> Self {
-        // Verify bounds before creating raw pointer
-        debug_assert!(
-            out_coef_start + out_fe.n_groups <= coef_sums.len(),
-            "out_coef_start ({}) + n_groups ({}) exceeds coef_sums.len() ({})",
-            out_coef_start,
-            out_fe.n_groups,
-            coef_sums.len()
-        );
-
-        // SAFETY: out_coef_start is the offset for this FE within coef_sums,
-        // verified by debug_assert above and guaranteed by DemeanContext construction.
-        let coef_sums_ptr = unsafe { coef_sums.as_ptr().add(out_coef_start) };
-
         Self {
             n_obs,
             n_groups: out_fe.n_groups,
             weights_ptr,
             out_groups_ptr: out_fe.group_ids.as_ptr(),
             inv_group_weights_ptr: out_fe.inv_group_weights.as_ptr(),
-            coef_sums_ptr,
             other_groups_ptr: other_fe.group_ids.as_ptr(),
             _phantom: std::marker::PhantomData,
         }
@@ -78,9 +73,21 @@ impl<'a> TwoFESweeper<'a> {
 
     /// Compute output coefficients from the other side's coefficients.
     ///
-    /// Formula: `out[g] = (sums[g] - Σᵢ other[other_groups[i]] * w[i]) * inv_weights[g]`
+    /// Formula: `out[g] = (rhs[g] - Σᵢ other[other_groups[i]] * w[i]) * inv_weights[g]`
+    ///
+    /// # Arguments
+    /// * `rhs` - Right-hand side vector (length: n_groups). For demeaning this is
+    ///           `D^T W y`; for preconditioning this is the input coefficient slice.
+    /// * `other_coef` - Coefficients from the other FE
+    /// * `out_coef` - Output buffer for this FE's coefficients (length: n_groups)
     #[inline(always)]
-    pub fn sweep(&self, other_coef: &[f64], out_coef: &mut [f64]) {
+    pub fn sweep(&self, rhs: &[f64], other_coef: &[f64], out_coef: &mut [f64]) {
+        debug_assert!(
+            rhs.len() >= self.n_groups,
+            "rhs.len() ({}) must be >= n_groups ({})",
+            rhs.len(),
+            self.n_groups
+        );
         debug_assert!(
             out_coef.len() >= self.n_groups,
             "out_coef.len() ({}) must be >= n_groups ({})",
@@ -88,18 +95,19 @@ impl<'a> TwoFESweeper<'a> {
             self.n_groups
         );
 
+        let rhs_ptr = rhs.as_ptr();
         let other_ptr = other_coef.as_ptr();
         let out_ptr = out_coef.as_mut_ptr();
 
         // SAFETY: All pointer operations are valid because:
-        // - coef_sums_ptr points to n_groups elements (set in constructor)
-        // - out_ptr has capacity n_groups (caller's responsibility, same as other_coef.len())
+        // - rhs_ptr points to n_groups elements (verified by debug_assert)
+        // - out_ptr has capacity n_groups (verified by debug_assert)
         // - inv_group_weights_ptr points to n_groups elements (from FixedEffectInfo)
         // - scatter_* methods only access indices < n_obs (loop bounds)
         // - group IDs are always < n_groups (invariant from DemeanContext construction)
         unsafe {
-            // 1. Initialize from coef_sums
-            std::ptr::copy_nonoverlapping(self.coef_sums_ptr, out_ptr, self.n_groups);
+            // 1. Initialize from rhs
+            std::ptr::copy_nonoverlapping(rhs_ptr, out_ptr, self.n_groups);
 
             // 2. Scatter-subtract
             match self.weights_ptr {
