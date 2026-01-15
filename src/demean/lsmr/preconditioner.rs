@@ -112,98 +112,6 @@ impl RightPreconditioner for DiagonalPreconditioner {
 }
 
 // =============================================================================
-// P2: Nullspace Deflation Preconditioner
-// =============================================================================
-
-/// Nullspace deflation preconditioner.
-///
-/// Projects out the constant (null space) component from each FE block.
-/// For each FE, the coefficients are centered by subtracting their weighted mean.
-///
-/// This handles rank-deficiency cleanly: FE coefficients are only identified
-/// up to a constant within each FE, and deflation removes this ambiguity.
-///
-/// # Cost
-/// - Construction: O(n_fe) to store block boundaries
-/// - Apply: O(n_coef) to compute and subtract means
-pub struct NullspaceDeflator {
-    /// Start and end indices for each FE block, plus their total weights
-    /// Each tuple is (start, end, sum_of_weights)
-    fe_blocks: Vec<(usize, usize, f64)>,
-    /// Weights for computing weighted mean (inv_group_weights from context)
-    weights: Vec<f64>,
-}
-
-impl NullspaceDeflator {
-    /// Create a nullspace deflator from a `DemeanContext`.
-    pub fn new(ctx: &DemeanContext) -> Self {
-        let mut fe_blocks = Vec::with_capacity(ctx.dims.n_fe);
-        let mut weights = Vec::with_capacity(ctx.dims.n_coef);
-
-        for fe in &ctx.fe_infos {
-            let start = fe.coef_start;
-            let end = start + fe.n_groups;
-            // Sum of weights (inverse of inv_group_weights = group counts)
-            let sum_weights: f64 = fe.inv_group_weights.iter().map(|&w| 1.0 / w).sum();
-            fe_blocks.push((start, end, sum_weights));
-
-            // Store 1/inv_group_weights = group_count for weighted mean
-            for &w in &fe.inv_group_weights {
-                weights.push(1.0 / w); // group_count
-            }
-        }
-
-        Self { fe_blocks, weights }
-    }
-}
-
-impl RightPreconditioner for NullspaceDeflator {
-    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
-        // First copy x to z
-        z.copy_from_slice(x);
-
-        // For each FE block, subtract the weighted mean
-        // Formula: z_i = x_i - (sum_j x_j * w_j) / W
-        for &(start, end, sum_weights) in &self.fe_blocks {
-            // Compute weighted sum
-            let weighted_sum: f64 = x[start..end]
-                .iter()
-                .zip(self.weights[start..end].iter())
-                .map(|(&xi, &wi)| xi * wi)
-                .sum();
-
-            // Weighted mean
-            let mean = weighted_sum / sum_weights;
-
-            // Subtract mean from each coefficient in this block
-            for z_i in z[start..end].iter_mut() {
-                *z_i -= mean;
-            }
-        }
-    }
-
-    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
-        // The deflator matrix is: M = I - (1/W) * 1 * w^T
-        // Its transpose is:       M^T = I - (1/W) * w * 1^T
-        // So: apply_transpose(x)_i = x_i - (w_i / W) * sum(x)
-
-        // First copy x to z
-        z.copy_from_slice(x);
-
-        // For each FE block, apply the transpose formula
-        for &(start, end, sum_weights) in &self.fe_blocks {
-            // Compute unweighted sum
-            let total_sum: f64 = x[start..end].iter().sum();
-
-            // Subtract (w_i / W) * sum for each coefficient
-            for (z_i, &w_i) in z[start..end].iter_mut().zip(self.weights[start..end].iter()) {
-                *z_i -= (w_i / sum_weights) * total_sum;
-            }
-        }
-    }
-}
-
-// =============================================================================
 // Composed Preconditioner
 // =============================================================================
 
@@ -344,8 +252,10 @@ impl<'a> TwoBlockStreamingPreconditioner<'a> {
 
 impl RightPreconditioner for TwoBlockStreamingPreconditioner<'_> {
     fn apply(&mut self, x: &[f64], z: &mut [f64]) {
-        // Initialize z = 0 for GS iteration (solving M*z = x)
-        z.iter_mut().for_each(|v| *v = 0.0);
+        // Copy non-P/Q coefficients from x, zero P/Q for GS iteration
+        z.copy_from_slice(x);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].fill(0.0);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].fill(0.0);
 
         // Perform inner_iters Gauss-Seidel iterations on the 2-FE subsystem
         // Each sweep uses the original input x as the RHS
@@ -353,16 +263,6 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner<'_> {
         for _ in 0..self.inner_iters {
             self.sweep_p(x, z);
             self.sweep_q(x, z);
-        }
-
-        // Copy non-preconditioned coefficients (other FEs) from input
-        // The sweeps only modify FEs p and q; other FE coefficients pass through
-        for (i, (&xi, zi)) in x.iter().zip(z.iter_mut()).enumerate() {
-            let in_p = i >= self.coef_start_p && i < self.coef_start_p + self.n_groups_p;
-            let in_q = i >= self.coef_start_q && i < self.coef_start_q + self.n_groups_q;
-            if !in_p && !in_q {
-                *zi = xi;
-            }
         }
     }
 
@@ -376,21 +276,15 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner<'_> {
         // Backward GS (transpose) uses (D + U)^{-1} = (L^T + D)^{-1}
         // which corresponds to reversing the update order.
 
-        z.iter_mut().for_each(|v| *v = 0.0);
+        // Copy non-P/Q coefficients from x, zero P/Q for GS iteration
+        z.copy_from_slice(x);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].fill(0.0);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].fill(0.0);
 
         // Reverse order: q then p
         for _ in 0..self.inner_iters {
             self.sweep_q(x, z);
             self.sweep_p(x, z);
-        }
-
-        // Copy non-preconditioned coefficients from input
-        for (i, (&xi, zi)) in x.iter().zip(z.iter_mut()).enumerate() {
-            let in_p = i >= self.coef_start_p && i < self.coef_start_p + self.n_groups_p;
-            let in_q = i >= self.coef_start_q && i < self.coef_start_q + self.n_groups_q;
-            if !in_p && !in_q {
-                *zi = xi;
-            }
         }
     }
 }
@@ -740,17 +634,6 @@ pub enum PreconditionerKind {
     /// Diagonal scaling by inverse square root of group counts (P1).
     Diagonal,
 
-    /// Nullspace deflation (DEPRECATED - produces incorrect results).
-    ///
-    /// This preconditioner was intended to improve conditioning by projecting
-    /// out the nullspace (constant mode) from each FE block. However, as a
-    /// right preconditioner in LSMR, it constrains the solution to have zero
-    /// weighted mean within each FE block, which changes the optimization
-    /// problem and produces different (incorrect) demeaned values.
-    ///
-    /// Use `Diagonal` or `TwoBlockStreaming` instead.
-    DiagonalPlusDeflation,
-
     /// Two-block streaming Gauss-Seidel (P3).
     /// Performs fixed inner GS iterations on a 2-FE subsystem.
     TwoBlockStreaming {
@@ -785,12 +668,6 @@ pub fn create_preconditioner<'a>(
     match kind {
         PreconditionerKind::None => Box::new(IdentityPreconditioner),
         PreconditionerKind::Diagonal => Box::new(DiagonalPreconditioner::new(ctx)),
-        PreconditionerKind::DiagonalPlusDeflation => {
-            // Use deflation alone - the composition with diagonal scaling was
-            // mathematically incorrect because deflation needs to operate in the
-            // original coefficient space to project out the correct nullspace.
-            Box::new(NullspaceDeflator::new(ctx))
-        }
         PreconditionerKind::TwoBlockStreaming {
             fe_p,
             fe_q,

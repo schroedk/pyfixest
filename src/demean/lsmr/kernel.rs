@@ -251,19 +251,16 @@ impl<'a> LSMRKernel<'a> {
         let phi = c * self.state.phi_bar;
         let phi_bar_new = s * self.state.phi_bar;
 
-        // Update solution: x = x + (phi / rho) * w
+        // Fused update: x = x + (phi/rho)*w and w = v - (theta_new/rho)*w
         if rho.abs() > 1e-15 {
-            let factor = phi / rho;
-            for (x_i, &w_i) in self.buffers.x.iter_mut().zip(self.buffers.w.iter()) {
-                *x_i += factor * w_i;
-            }
-        }
-
-        // Update w: w = v - (theta_new / rho) * w
-        if rho.abs() > 1e-15 {
-            let factor = theta_new / rho;
-            for (w_i, &v_i) in self.buffers.w.iter_mut().zip(self.buffers.v.iter()) {
-                *w_i = v_i - factor * *w_i;
+            let factor_x = phi / rho;
+            let factor_w = theta_new / rho;
+            for ((x_i, w_i), &v_i) in self.buffers.x.iter_mut()
+                .zip(self.buffers.w.iter_mut())
+                .zip(self.buffers.v.iter())
+            {
+                *x_i += factor_x * *w_i;
+                *w_i = v_i - factor_w * *w_i;
             }
         } else {
             self.buffers.w.copy_from_slice(&self.buffers.v);
@@ -284,9 +281,6 @@ impl<'a> LSMRKernel<'a> {
 
         // ||A^T r|| estimate
         self.state.arnorm = (self.state.alpha * self.state.c.abs() * self.state.phi_bar).abs();
-
-        // ||x|| estimate
-        self.state.xnorm = norm2(&self.buffers.x);
 
         // Condition number estimate
         if self.state.anorm > 0.0 && self.state.rho_bar.abs() > 0.0 {

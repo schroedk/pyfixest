@@ -824,43 +824,6 @@ def test_lsmr_preconditioners_same_output(preconditioner):
     )
 
 
-@pytest.mark.skip(
-    reason="Deflation preconditioner is fundamentally broken as a right preconditioner - "
-    "it constrains the solution to have zero weighted mean, changing the optimization problem"
-)
-def test_lsmr_deflation_preconditioner():
-    """Test that deflation preconditioner matches GS output.
-
-    NOTE: This test is expected to fail. The deflation operator is a projection
-    that removes the nullspace component, but as a right preconditioner in LSMR,
-    it constrains the solution space rather than improving conditioning. The
-    resulting coefficients have zero weighted mean within each FE block, which
-    is different from the unconstrained least-squares solution.
-    """
-    n_obs = 100
-    n_groups_0 = 10
-    n_groups_1 = 5
-
-    rng = np.random.default_rng(42)
-    x = rng.normal(0, 1, (n_obs, 2))
-    flist = np.column_stack(
-        [np.arange(n_obs) % n_groups_0, np.arange(n_obs) % n_groups_1]
-    ).astype(np.uint64)
-    weights = np.ones(n_obs)
-
-    result_gs = _demean_rs(x, flist, weights, solver="gauss_seidel")
-    result_lsmr = _demean_rs(
-        x, flist, weights, solver="lsmr", lsmr_preconditioner="deflation"
-    )
-
-    np.testing.assert_allclose(
-        result_gs["demeaned"],
-        result_lsmr["demeaned"],
-        rtol=1e-6,
-        atol=1e-6,
-    )
-
-
 def test_lsmr_streaming_preconditioner():
     """Test that streaming preconditioner matches GS output."""
     n_obs = 100

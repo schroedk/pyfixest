@@ -202,7 +202,7 @@ pub(crate) fn demean(
 /// * `maxiter` - Maximum iterations (default: 100_000)
 /// * `reorder_fe` - Whether to reorder FEs by size (default: false)
 /// * `solver` - Solver algorithm: "gauss_seidel" (default) or "lsmr"
-/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming", "sparse_gram"
+/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "streaming", "sparse_gram"
 ///
 /// # Returns
 ///
@@ -242,7 +242,6 @@ pub fn _demean_rs<'py>(
     let preconditioner_kind = match lsmr_preconditioner {
         "none" => PreconditionerKind::None,
         "diagonal" => PreconditionerKind::Diagonal,
-        "deflation" => PreconditionerKind::DiagonalPlusDeflation,
         "streaming" => PreconditionerKind::TwoBlockStreaming {
             fe_p: None,
             fe_q: None,
@@ -255,7 +254,7 @@ pub fn _demean_rs<'py>(
         },
         _ => {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', 'streaming', or 'sparse_gram'.",
+                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'streaming', or 'sparse_gram'.",
                 lsmr_preconditioner
             )))
         }

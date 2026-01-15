@@ -108,8 +108,6 @@ pub struct LSMRState {
     pub(crate) rnorm: f64,
     /// ||A^T r||
     pub(crate) arnorm: f64,
-    /// ||x||
-    pub(crate) xnorm: f64,
 }
 
 impl LSMRState {
