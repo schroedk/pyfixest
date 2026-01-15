@@ -45,6 +45,10 @@ pub struct LSMRConfig {
     pub maxiter: usize,
     /// Tolerance for condition number estimate (optional early stop).
     pub conlim: f64,
+    /// Damping (regularization) parameter λ.
+    /// Solves min ||Ax - b||² + λ²||x||² instead of min ||Ax - b||².
+    /// Set to 0.0 for standard unregularized least squares.
+    pub damp: f64,
 }
 
 impl Default for LSMRConfig {
@@ -53,6 +57,7 @@ impl Default for LSMRConfig {
             tol: 1e-8,
             maxiter: 10_000,
             conlim: 1e8,
+            damp: 0.0,
         }
     }
 }
@@ -119,13 +124,15 @@ impl<'a> LSMRKernel<'a> {
         self.buffers.w.copy_from_slice(&self.buffers.v);
 
         // Initialize scalars for QR factorization
+        self.state.alphabar = self.state.alpha; // For damped LSMR
         self.state.rho_bar = self.state.alpha;
         self.state.phi_bar = self.state.beta;
         self.state.rnorm = self.state.beta;
         self.state.arnorm = self.state.alpha * self.state.beta;
 
-        // Estimate of ||A||_F
-        self.state.anorm = self.state.alpha;
+        // Estimate of ||A||_F (includes damp for regularized case)
+        let damp = self.config.damp;
+        self.state.anorm = (self.state.alpha * self.state.alpha + damp * damp).sqrt();
 
         // Check for trivial case (zero RHS)
         if self.state.beta == 0.0 {
@@ -237,25 +244,49 @@ impl<'a> LSMRKernel<'a> {
         }
     }
 
-    /// Apply Givens rotation and update solution estimate.
+    /// Apply Givens rotations and update solution estimate.
+    ///
+    /// For damped LSMR, we apply two rotations:
+    /// 1. First rotation handles damping: eliminates damp from [alphabar; damp]
+    /// 2. Second rotation: eliminates beta from the result
+    ///
+    /// When damp=0, the first rotation is identity (chat=1) and we recover
+    /// the standard LSMR algorithm.
     #[inline]
     fn qr_and_update_step(&mut self) {
-        // Construct and apply Givens rotation
-        let rho = (self.state.rho_bar.powi(2) + self.state.beta.powi(2)).sqrt();
+        let damp = self.config.damp;
 
-        let c = self.state.rho_bar / rho;
-        let s = self.state.beta / rho;
+        // First rotation (for damping): [alphabar; damp] -> [alphahat; 0]
+        // When damp=0: chat=1, alphahat=alphabar (no change)
+        let (chat, alphahat) = if damp == 0.0 {
+            (1.0, self.state.alphabar)
+        } else {
+            let (c, _s, r) = sym_ortho(self.state.alphabar, damp);
+            (c, r)
+        };
+
+        // Second rotation: [alphahat; beta] -> [rho; 0]
+        // Use direct computation to preserve sign of alphahat
+        let rho = (alphahat * alphahat + self.state.beta * self.state.beta).sqrt();
+        let (c, s) = if rho > 1e-15 {
+            (alphahat / rho, self.state.beta / rho)
+        } else {
+            (1.0, 0.0)
+        };
 
         let theta_new = s * self.state.alpha;
         let rho_bar_new = -c * self.state.alpha;
-        let phi = c * self.state.phi_bar;
+        let phi = c * chat * self.state.phi_bar;
         let phi_bar_new = s * self.state.phi_bar;
 
         // Fused update: x = x + (phi/rho)*w and w = v - (theta_new/rho)*w
-        if rho.abs() > 1e-15 {
+        if rho > 1e-15 {
             let factor_x = phi / rho;
             let factor_w = theta_new / rho;
-            for ((x_i, w_i), &v_i) in self.buffers.x.iter_mut()
+            for ((x_i, w_i), &v_i) in self
+                .buffers
+                .x
+                .iter_mut()
                 .zip(self.buffers.w.iter_mut())
                 .zip(self.buffers.v.iter())
             {
@@ -266,7 +297,9 @@ impl<'a> LSMRKernel<'a> {
             self.buffers.w.copy_from_slice(&self.buffers.v);
         }
 
-        // Update state
+        // Update state for next iteration
+        // alphabar carries across iterations; when damp=0, alphabar = rho_bar (with sign)
+        self.state.alphabar = rho_bar_new;
         self.state.rho_bar = rho_bar_new;
         self.state.phi_bar = phi_bar_new;
         self.state.c = c;
@@ -276,6 +309,15 @@ impl<'a> LSMRKernel<'a> {
     /// Update norm estimates for convergence checking.
     #[inline]
     fn update_norms(&mut self) {
+        let damp = self.config.damp;
+
+        // Update ||A||_F estimate (includes damp for regularized case)
+        self.state.anorm = (self.state.anorm.powi(2)
+            + self.state.alpha.powi(2)
+            + self.state.beta.powi(2)
+            + damp * damp)
+            .sqrt();
+
         // ||r|| estimate from QR factorization
         self.state.rnorm = self.state.phi_bar.abs();
 
@@ -292,6 +334,43 @@ impl<'a> LSMRKernel<'a> {
 // =============================================================================
 // Utility Functions
 // =============================================================================
+
+/// Numerically stable Givens rotation.
+///
+/// Computes (c, s, r) such that:
+/// ```text
+/// [ c  s ] [ a ]   [ r ]
+/// [-s  c ] [ b ] = [ 0 ]
+/// ```
+///
+/// This implementation follows S.-C. Choi's stable formulation which avoids
+/// potential division by very small numbers.
+///
+/// # References
+/// - S.-C. Choi, "Iterative Methods for Singular Linear Equations and
+///   Least-Squares Problems", Stanford PhD Thesis, 2006.
+#[inline]
+fn sym_ortho(a: f64, b: f64) -> (f64, f64, f64) {
+    if b == 0.0 {
+        let c = if a >= 0.0 { 1.0 } else { -1.0 };
+        (c, 0.0, a.abs())
+    } else if a == 0.0 {
+        let s = if b >= 0.0 { 1.0 } else { -1.0 };
+        (0.0, s, b.abs())
+    } else if b.abs() > a.abs() {
+        let tau = a / b;
+        let s = (if b >= 0.0 { 1.0 } else { -1.0 }) / (1.0 + tau * tau).sqrt();
+        let c = s * tau;
+        let r = b / s;
+        (c, s, r)
+    } else {
+        let tau = b / a;
+        let c = (if a >= 0.0 { 1.0 } else { -1.0 }) / (1.0 + tau * tau).sqrt();
+        let s = c * tau;
+        let r = a / c;
+        (c, s, r)
+    }
+}
 
 /// Compute 2-norm of a vector.
 #[inline]
@@ -419,6 +498,159 @@ mod tests {
         assert_eq!(result.iterations, 0);
         for (i, &x_i) in x.iter().enumerate() {
             assert!(x_i.abs() < 1e-10, "x[{}] = {} != 0", i, x_i);
+        }
+    }
+
+    #[test]
+    fn test_sym_ortho_basic() {
+        // Test basic Givens rotation: should satisfy c² + s² = 1 and r = √(a² + b²)
+        let (c, s, r) = sym_ortho(3.0, 4.0);
+        assert!((c * c + s * s - 1.0).abs() < 1e-14, "c²+s² should be 1");
+        assert!((r - 5.0).abs() < 1e-14, "r should be 5");
+        // Check rotation property: c*a + s*b = r
+        assert!((c * 3.0 + s * 4.0 - r).abs() < 1e-14);
+    }
+
+    #[test]
+    fn test_sym_ortho_edge_cases() {
+        // b = 0 case
+        let (c, s, r) = sym_ortho(5.0, 0.0);
+        assert_eq!(c, 1.0);
+        assert_eq!(s, 0.0);
+        assert_eq!(r, 5.0);
+
+        // a = 0 case
+        let (c, s, r) = sym_ortho(0.0, 5.0);
+        assert_eq!(c, 0.0);
+        assert_eq!(s, 1.0);
+        assert_eq!(r, 5.0);
+
+        // Negative values
+        let (c, s, r) = sym_ortho(-3.0, 4.0);
+        assert!((c * c + s * s - 1.0).abs() < 1e-14);
+        assert!((r - 5.0).abs() < 1e-14);
+
+        // |b| > |a| case (triggers different branch)
+        let (c, s, r) = sym_ortho(1.0, 10.0);
+        assert!((c * c + s * s - 1.0).abs() < 1e-14);
+        assert!((r - (101.0_f64).sqrt()).abs() < 1e-14);
+    }
+
+    #[test]
+    fn test_lsmr_damped_identity() {
+        // Solve (I + λ²I)x = b with damping λ
+        // For diagonal A=I, the damped solution is: x = b / (1 + λ²)
+        let n = 5;
+        let mut op = DiagonalOp {
+            diag: vec![1.0; n],
+        };
+        let b = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+        // Without damping
+        let config_undamped = LSMRConfig::default();
+        let mut buffers = LSMRBuffers::new(n, n);
+        let mut x_undamped = vec![0.0; n];
+        let mut kernel = LSMRKernel::new(config_undamped, &mut buffers);
+        kernel.solve(&mut op, &b, &mut x_undamped);
+
+        // With damping λ = 1.0
+        let config_damped = LSMRConfig {
+            damp: 1.0,
+            ..LSMRConfig::default()
+        };
+        let mut buffers = LSMRBuffers::new(n, n);
+        let mut x_damped = vec![0.0; n];
+        let mut kernel = LSMRKernel::new(config_damped, &mut buffers);
+        let result = kernel.solve(&mut op, &b, &mut x_damped);
+
+        assert!(result.converged);
+
+        // Damped solution should be shrunk toward zero
+        // For A=I and damp=λ, the solution is x = b/(1+λ²) = b/2
+        for (i, (&x_d, &b_i)) in x_damped.iter().zip(b.iter()).enumerate() {
+            let expected = b_i / 2.0;
+            assert!(
+                (x_d - expected).abs() < 1e-6,
+                "damped x[{}] = {} != expected {}",
+                i,
+                x_d,
+                expected
+            );
+        }
+
+        // Verify undamped solution is different (equals b for identity)
+        for (&x_u, &x_d) in x_undamped.iter().zip(x_damped.iter()) {
+            assert!(
+                (x_u - x_d).abs() > 0.1,
+                "Damped and undamped should differ significantly"
+            );
+        }
+    }
+
+    #[test]
+    fn test_lsmr_damped_shrinkage() {
+        // Test that increasing damp shrinks the solution more
+        let mut op = DiagonalOp {
+            diag: vec![2.0, 3.0, 4.0],
+        };
+        let b = vec![2.0, 6.0, 12.0];
+
+        // Collect solutions for different damp values
+        let damp_values = [0.0, 0.1, 1.0, 10.0];
+        let mut norms: Vec<f64> = Vec::new();
+
+        for &damp in &damp_values {
+            let config = LSMRConfig {
+                damp,
+                ..LSMRConfig::default()
+            };
+            let mut buffers = LSMRBuffers::new(3, 3);
+            let mut x = vec![0.0; 3];
+            let mut kernel = LSMRKernel::new(config, &mut buffers);
+            kernel.solve(&mut op, &b, &mut x);
+
+            let norm = x.iter().map(|&v| v * v).sum::<f64>().sqrt();
+            norms.push(norm);
+        }
+
+        // Solution norm should decrease as damp increases
+        for i in 1..norms.len() {
+            assert!(
+                norms[i] <= norms[i - 1] + 1e-10,
+                "||x|| should decrease with damp: {:?}",
+                norms
+            );
+        }
+    }
+
+    #[test]
+    fn test_lsmr_zero_damp_unchanged() {
+        // Verify that damp=0 gives same result as before (backward compatibility)
+        let mut op = DiagonalOp {
+            diag: vec![2.0, 3.0, 4.0],
+        };
+        let b = vec![2.0, 6.0, 12.0];
+        let expected = vec![1.0, 2.0, 3.0]; // Exact solution
+
+        let config = LSMRConfig {
+            damp: 0.0,
+            ..LSMRConfig::default()
+        };
+        let mut buffers = LSMRBuffers::new(3, 3);
+        let mut x = vec![0.0; 3];
+        let mut kernel = LSMRKernel::new(config, &mut buffers);
+
+        let result = kernel.solve(&mut op, &b, &mut x);
+
+        assert!(result.converged);
+        for (i, (&x_i, &e_i)) in x.iter().zip(expected.iter()).enumerate() {
+            assert!(
+                (x_i - e_i).abs() < 1e-8,
+                "x[{}] = {} != expected {}",
+                i,
+                x_i,
+                e_i
+            );
         }
     }
 }

@@ -435,6 +435,11 @@ pub struct LSMRConfig {
 
     /// Preconditioner type to use.
     pub preconditioner: PreconditionerKind,
+
+    /// Damping (regularization) parameter λ.
+    /// Solves min ||Ax - b||² + λ²||x||² instead of min ||Ax - b||².
+    /// Set to 0.0 for standard unregularized least squares.
+    pub damp: f64,
 }
 
 impl Default for LSMRConfig {
@@ -443,6 +448,7 @@ impl Default for LSMRConfig {
             tol: 1e-8,
             maxiter: 10_000,
             preconditioner: PreconditionerKind::Diagonal,
+            damp: 0.0,
         }
     }
 }

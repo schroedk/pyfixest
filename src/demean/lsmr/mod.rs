@@ -77,6 +77,7 @@ impl Demeaner for LSMRDemeaner<'_> {
             tol: self.config.tol,
             maxiter: self.config.maxiter,
             conlim: 1e8,
+            damp: self.config.damp,
         };
 
         // For weighted least squares, we solve min ||W^{1/2}(b - Dx)||

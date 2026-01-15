@@ -90,6 +90,8 @@ pub struct LSMRState {
     pub(crate) beta: f64,
 
     // QR factorization state (Givens rotations)
+    /// alpha_bar for damped LSMR (carries across iterations)
+    pub(crate) alphabar: f64,
     /// rho_bar from QR
     pub(crate) rho_bar: f64,
     /// phi_bar from QR

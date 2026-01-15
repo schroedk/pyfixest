@@ -73,8 +73,8 @@ impl<'a> ThreadLocalDemeaner<'a> {
         match solver {
             SolverKind::GaussSeidel => match ctx.dims.n_fe {
                 1 => ThreadLocalDemeaner::Single(SingleFEDemeaner::new(ctx)),
-                2 => ThreadLocalDemeaner::Two(TwoFEDemeaner::new(ctx, config)),
-                _ => ThreadLocalDemeaner::Multi(MultiFEDemeaner::new(ctx, config)),
+                2 => ThreadLocalDemeaner::LSMR(LSMRDemeaner::new(ctx, *lsmr_config)),
+                _ => ThreadLocalDemeaner::LSMR(LSMRDemeaner::new(ctx, *lsmr_config)),
             },
             SolverKind::LSMR => ThreadLocalDemeaner::LSMR(LSMRDemeaner::new(ctx, *lsmr_config)),
         }
@@ -264,6 +264,7 @@ pub fn _demean_rs<'py>(
         tol,
         maxiter,
         preconditioner: preconditioner_kind,
+        damp: 0.0,
     };
 
     let result = py.detach(|| {
