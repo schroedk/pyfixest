@@ -4,10 +4,7 @@ mod collinear;
 mod crv1;
 mod demean;
 mod detect_singletons;
-pub mod graph;
-pub mod laplacian;
 mod nested_fixed_effects;
-pub mod support_tree;
 
 #[pymodule]
 fn _core_impl(m: &Bound<'_, PyModule>) -> PyResult<()> {

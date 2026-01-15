@@ -13,11 +13,8 @@
 //! This requires applying M^{-1} (forward) and M^{-T} (transpose).
 //! For symmetric preconditioners, M^{-T} = M^{-1}.
 
+use crate::demean::sweep::TwoFESweeper;
 use crate::demean::types::DemeanContext;
-use crate::graph::components::ComponentsCSR;
-use crate::graph::union_find::UnionFind;
-use crate::laplacian::LaplacianOp;
-use crate::support_tree::{FixedPCG, SpanningForest};
 
 /// Right preconditioner for LSMR.
 ///
@@ -34,14 +31,14 @@ pub trait RightPreconditioner {
     /// # Arguments
     /// * `x` - Input vector (length: n_coef)
     /// * `z` - Output vector (length: n_coef), overwritten
-    fn apply(&self, x: &[f64], z: &mut [f64]);
+    fn apply(&mut self, x: &[f64], z: &mut [f64]);
 
     /// Apply the transpose: z = M^{-T} * x.
     ///
     /// Default implementation assumes symmetric preconditioner (M^{-T} = M^{-1}).
     /// Override for non-symmetric preconditioners.
     #[allow(dead_code)]
-    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
         self.apply(x, z);
     }
 }
@@ -59,7 +56,7 @@ pub struct IdentityPreconditioner;
 
 impl RightPreconditioner for IdentityPreconditioner {
     #[inline]
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         z.copy_from_slice(x);
     }
 }
@@ -104,7 +101,7 @@ impl DiagonalPreconditioner {
 
 impl RightPreconditioner for DiagonalPreconditioner {
     #[inline]
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         debug_assert_eq!(x.len(), self.inv_sqrt_weights.len());
         debug_assert_eq!(z.len(), self.inv_sqrt_weights.len());
 
@@ -161,7 +158,7 @@ impl NullspaceDeflator {
 }
 
 impl RightPreconditioner for NullspaceDeflator {
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         // First copy x to z
         z.copy_from_slice(x);
 
@@ -185,7 +182,7 @@ impl RightPreconditioner for NullspaceDeflator {
         }
     }
 
-    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
         // The deflator matrix is: M = I - (1/W) * 1 * w^T
         // Its transpose is:       M^T = I - (1/W) * w * 1^T
         // So: apply_transpose(x)_i = x_i - (w_i / W) * sum(x)
@@ -217,8 +214,8 @@ impl RightPreconditioner for NullspaceDeflator {
 pub struct ComposedPreconditioner<P1, P2> {
     p1: P1,
     p2: P2,
-    /// Scratch buffer for intermediate result (uses Mutex for thread safety)
-    scratch: std::sync::Mutex<Vec<f64>>,
+    /// Scratch buffer for intermediate result
+    scratch: Vec<f64>,
 }
 
 impl<P1: RightPreconditioner, P2: RightPreconditioner> ComposedPreconditioner<P1, P2> {
@@ -227,7 +224,7 @@ impl<P1: RightPreconditioner, P2: RightPreconditioner> ComposedPreconditioner<P1
         Self {
             p1,
             p2,
-            scratch: std::sync::Mutex::new(vec![0.0; n_coef]),
+            scratch: vec![0.0; n_coef],
         }
     }
 }
@@ -235,18 +232,16 @@ impl<P1: RightPreconditioner, P2: RightPreconditioner> ComposedPreconditioner<P1
 impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
     for ComposedPreconditioner<P1, P2>
 {
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         // z = P2(P1(x))
-        let mut scratch = self.scratch.lock().unwrap();
-        self.p1.apply(x, &mut scratch);
-        self.p2.apply(&scratch, z);
+        self.p1.apply(x, &mut self.scratch);
+        self.p2.apply(&self.scratch, z);
     }
 
-    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
         // For transpose: (P2 * P1)^T = P1^T * P2^T
-        let mut scratch = self.scratch.lock().unwrap();
-        self.p2.apply_transpose(x, &mut scratch);
-        self.p1.apply_transpose(&scratch, z);
+        self.p2.apply_transpose(x, &mut self.scratch);
+        self.p1.apply_transpose(&self.scratch, z);
     }
 }
 
@@ -266,13 +261,7 @@ impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
 /// # Cost
 /// - Construction: O(1)
 /// - Apply: O(n_obs × inner_iters) per application
-pub struct TwoBlockStreamingPreconditioner {
-    /// Index of first FE in the 2-block subsystem
-    #[allow(dead_code)]
-    fe_p: usize,
-    /// Index of second FE in the 2-block subsystem
-    #[allow(dead_code)]
-    fe_q: usize,
+pub struct TwoBlockStreamingPreconditioner<'a> {
     /// Number of inner GS iterations
     inner_iters: usize,
     /// Coefficient start offset for FE p
@@ -283,20 +272,16 @@ pub struct TwoBlockStreamingPreconditioner {
     n_groups_p: usize,
     /// Number of groups in FE q
     n_groups_q: usize,
-    /// Group IDs for FE p (for each observation)
-    group_ids_p: Vec<usize>,
-    /// Group IDs for FE q (for each observation)
-    group_ids_q: Vec<usize>,
-    /// Inverse group weights for FE p (1/count)
-    inv_weights_p: Vec<f64>,
-    /// Inverse group weights for FE q (1/count)
-    inv_weights_q: Vec<f64>,
-    /// Preallocated scratch buffers (use Mutex for interior mutability)
-    scratch_p: std::sync::Mutex<Vec<f64>>,
-    scratch_q: std::sync::Mutex<Vec<f64>>,
+    /// Sweeper for FE p (computes p coefficients from q)
+    sweeper_p: TwoFESweeper<'a>,
+    /// Sweeper for FE q (computes q coefficients from p)
+    sweeper_q: TwoFESweeper<'a>,
+    /// Preallocated scratch buffers
+    scratch_p: Vec<f64>,
+    scratch_q: Vec<f64>,
 }
 
-impl TwoBlockStreamingPreconditioner {
+impl<'a> TwoBlockStreamingPreconditioner<'a> {
     /// Create a two-block streaming preconditioner.
     ///
     /// # Arguments
@@ -305,7 +290,7 @@ impl TwoBlockStreamingPreconditioner {
     /// * `fe_q` - Second FE index (or None for auto-select)
     /// * `inner_iters` - Number of inner GS iterations (typically 2-5)
     pub fn new(
-        ctx: &DemeanContext,
+        ctx: &'a DemeanContext,
         fe_p: Option<usize>,
         fe_q: Option<usize>,
         inner_iters: usize,
@@ -321,80 +306,53 @@ impl TwoBlockStreamingPreconditioner {
 
         let n_groups_p = fe_p_info.n_groups;
         let n_groups_q = fe_q_info.n_groups;
+        let weights_ptr = ctx.weights.as_ref().map(|w| w.as_ptr());
 
         Self {
-            fe_p: p,
-            fe_q: q,
             inner_iters,
             coef_start_p: fe_p_info.coef_start,
             coef_start_q: fe_q_info.coef_start,
             n_groups_p,
             n_groups_q,
-            group_ids_p: fe_p_info.group_ids.clone(),
-            group_ids_q: fe_q_info.group_ids.clone(),
-            inv_weights_p: fe_p_info.inv_group_weights.clone(),
-            inv_weights_q: fe_q_info.inv_group_weights.clone(),
-            scratch_p: std::sync::Mutex::new(vec![0.0; n_groups_p]),
-            scratch_q: std::sync::Mutex::new(vec![0.0; n_groups_q]),
+            sweeper_p: TwoFESweeper::new(ctx.dims.n_obs, weights_ptr, fe_p_info, fe_q_info),
+            sweeper_q: TwoFESweeper::new(ctx.dims.n_obs, weights_ptr, fe_q_info, fe_p_info),
+            scratch_p: vec![0.0; n_groups_p],
+            scratch_q: vec![0.0; n_groups_q],
         }
     }
 
     /// Perform one GS sweep: update FE p coefficients given FE q coefficients.
-    ///
-    /// Solves: z_p[g] = (x_p[g] - sum_{i in g} z_q[group_q[i]]) / count_g
-    fn sweep_p(&self, x: &[f64], z: &mut [f64], rhs: &mut [f64]) {
-        // Initialize RHS from input
-        rhs.iter_mut()
-            .enumerate()
-            .for_each(|(g, r)| *r = x[self.coef_start_p + g]);
+    fn sweep_p(&mut self, x: &[f64], z: &mut [f64]) {
+        let rhs = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
+        let other = &z[self.coef_start_q..self.coef_start_q + self.n_groups_q];
 
-        // Streaming matvec: rhs[gp] -= sum over obs with group_p=gp of z_q[group_q]
-        for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
-            rhs[gp] -= z[self.coef_start_q + gq];
-        }
+        self.sweeper_p.sweep(rhs, other, &mut self.scratch_p);
 
-        // Divide by diagonal
-        for (g, (&r, &inv_w)) in rhs.iter().zip(self.inv_weights_p.iter()).enumerate() {
-            z[self.coef_start_p + g] = r * inv_w;
-        }
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(&self.scratch_p);
     }
 
     /// Perform one GS sweep: update FE q coefficients given FE p coefficients.
-    ///
-    /// Solves: z_q[h] = (x_q[h] - sum_{i in h} z_p[group_p[i]]) / count_h
-    fn sweep_q(&self, x: &[f64], z: &mut [f64], rhs: &mut [f64]) {
-        // Initialize RHS from input
-        rhs.iter_mut()
-            .enumerate()
-            .for_each(|(h, r)| *r = x[self.coef_start_q + h]);
+    fn sweep_q(&mut self, x: &[f64], z: &mut [f64]) {
+        let rhs = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
+        let other = &z[self.coef_start_p..self.coef_start_p + self.n_groups_p];
 
-        // Streaming matvec: rhs[gq] -= sum over obs with group_q=gq of z_p[group_p]
-        for (&gp, &gq) in self.group_ids_p.iter().zip(self.group_ids_q.iter()) {
-            rhs[gq] -= z[self.coef_start_p + gp];
-        }
+        self.sweeper_q.sweep(rhs, other, &mut self.scratch_q);
 
-        // Divide by diagonal
-        for (h, (&r, &inv_w)) in rhs.iter().zip(self.inv_weights_q.iter()).enumerate() {
-            z[self.coef_start_q + h] = r * inv_w;
-        }
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(&self.scratch_q);
     }
 }
 
-impl RightPreconditioner for TwoBlockStreamingPreconditioner {
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
+impl RightPreconditioner for TwoBlockStreamingPreconditioner<'_> {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         // Initialize z = 0 for GS iteration (solving M*z = x)
         z.iter_mut().for_each(|v| *v = 0.0);
-
-        // Get scratch buffers
-        let mut scratch_p = self.scratch_p.lock().unwrap();
-        let mut scratch_q = self.scratch_q.lock().unwrap();
 
         // Perform inner_iters Gauss-Seidel iterations on the 2-FE subsystem
         // Each sweep uses the original input x as the RHS
         // Forward order: p then q
         for _ in 0..self.inner_iters {
-            self.sweep_p(x, z, &mut scratch_p);
-            self.sweep_q(x, z, &mut scratch_q);
+            self.sweep_p(x, z);
+            self.sweep_q(x, z);
         }
 
         // Copy non-preconditioned coefficients (other FEs) from input
@@ -408,7 +366,7 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner {
         }
     }
 
-    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
         // The transpose of GS iteration requires reversing the sweep order.
         // If forward is: sweep_p then sweep_q (inner loop)
         // Then transpose is: sweep_q then sweep_p
@@ -420,14 +378,10 @@ impl RightPreconditioner for TwoBlockStreamingPreconditioner {
 
         z.iter_mut().for_each(|v| *v = 0.0);
 
-        // Get scratch buffers
-        let mut scratch_p = self.scratch_p.lock().unwrap();
-        let mut scratch_q = self.scratch_q.lock().unwrap();
-
         // Reverse order: q then p
         for _ in 0..self.inner_iters {
-            self.sweep_q(x, z, &mut scratch_q);
-            self.sweep_p(x, z, &mut scratch_p);
+            self.sweep_q(x, z);
+            self.sweep_p(x, z);
         }
 
         // Copy non-preconditioned coefficients from input
@@ -540,8 +494,8 @@ pub struct SparseGramPreconditioner {
     mqp_values: Vec<f64>,
     /// Number of inner GS iterations
     inner_iters: usize,
-    /// Scratch buffers (protected by Mutex for interior mutability)
-    scratch: std::sync::Mutex<SparseGSScratch>,
+    /// Scratch buffers
+    scratch: SparseGSScratch,
 }
 
 /// Scratch buffers for sparse GS iterations.
@@ -642,78 +596,74 @@ impl SparseGramPreconditioner {
             mqp_col_idx,
             mqp_values,
             inner_iters,
-            scratch: std::sync::Mutex::new(scratch),
+            scratch,
         }
     }
 
-    /// Sparse matrix-vector product: y = M_pq @ x_q
-    #[inline]
-    fn mpq_matvec(&self, x_q: &[f64], y_p: &mut [f64]) {
-        for (i, y_i) in y_p.iter_mut().enumerate() {
-            let start = self.mpq_row_ptr[i];
-            let end = self.mpq_row_ptr[i + 1];
-            let mut sum = 0.0;
-            for idx in start..end {
-                let j = self.mpq_col_idx[idx];
-                sum += self.mpq_values[idx] * x_q[j];
-            }
-            *y_i = sum;
-        }
-    }
+}
 
-    /// Sparse matrix-vector product: y = M_qp @ x_p
-    #[inline]
-    fn mqp_matvec(&self, x_p: &[f64], y_q: &mut [f64]) {
-        for (i, y_i) in y_q.iter_mut().enumerate() {
-            let start = self.mqp_row_ptr[i];
-            let end = self.mqp_row_ptr[i + 1];
-            let mut sum = 0.0;
-            for idx in start..end {
-                let j = self.mqp_col_idx[idx];
-                sum += self.mqp_values[idx] * x_p[j];
-            }
-            *y_i = sum;
+/// Sparse matrix-vector product: y = M @ x (CSR format)
+#[inline]
+fn sparse_csr_matvec(
+    row_ptr: &[usize],
+    col_idx: &[usize],
+    values: &[f64],
+    x: &[f64],
+    y: &mut [f64],
+) {
+    for (i, y_i) in y.iter_mut().enumerate() {
+        let start = row_ptr[i];
+        let end = row_ptr[i + 1];
+        let mut sum = 0.0;
+        for idx in start..end {
+            let j = col_idx[idx];
+            sum += values[idx] * x[j];
         }
+        *y_i = sum;
     }
 }
 
 impl RightPreconditioner for SparseGramPreconditioner {
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
-        let mut scratch = self.scratch.lock().unwrap();
-        let SparseGSScratch {
-            z_p,
-            z_q,
-            temp_p,
-            temp_q,
-        } = &mut *scratch;
-
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         // Extract x_p and x_q from the full coefficient vector
         let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
         let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
 
         // Initialize z_p, z_q = 0
-        z_p.iter_mut().for_each(|v| *v = 0.0);
-        z_q.iter_mut().for_each(|v| *v = 0.0);
+        self.scratch.z_p.iter_mut().for_each(|v| *v = 0.0);
+        self.scratch.z_q.iter_mut().for_each(|v| *v = 0.0);
 
         // Perform inner_iters Gauss-Seidel iterations using sparse matvec
         // Solving: diag(count_p) @ z_p + M_pq @ z_q = x_p
         //          M_qp @ z_p + diag(count_q) @ z_q = x_q
         for _ in 0..self.inner_iters {
             // sweep_p: z_p = (x_p - M_pq @ z_q) * inv_diag_p
-            self.mpq_matvec(z_q, temp_p);
-            for ((z_i, &t), (&x_i, &inv_d)) in z_p
+            sparse_csr_matvec(
+                &self.mpq_row_ptr,
+                &self.mpq_col_idx,
+                &self.mpq_values,
+                &self.scratch.z_q,
+                &mut self.scratch.temp_p,
+            );
+            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_p
                 .iter_mut()
-                .zip(temp_p.iter())
+                .zip(self.scratch.temp_p.iter())
                 .zip(x_p.iter().zip(self.inv_diag_p.iter()))
             {
                 *z_i = (x_i - t) * inv_d;
             }
 
             // sweep_q: z_q = (x_q - M_qp @ z_p) * inv_diag_q
-            self.mqp_matvec(z_p, temp_q);
-            for ((z_i, &t), (&x_i, &inv_d)) in z_q
+            sparse_csr_matvec(
+                &self.mqp_row_ptr,
+                &self.mqp_col_idx,
+                &self.mqp_values,
+                &self.scratch.z_p,
+                &mut self.scratch.temp_q,
+            );
+            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_q
                 .iter_mut()
-                .zip(temp_q.iter())
+                .zip(self.scratch.temp_q.iter())
                 .zip(x_q.iter().zip(self.inv_diag_q.iter()))
             {
                 *z_i = (x_i - t) * inv_d;
@@ -722,43 +672,47 @@ impl RightPreconditioner for SparseGramPreconditioner {
 
         // Copy result back to z, pass through other coefficients
         z.copy_from_slice(x);
-        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(z_p);
-        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(z_q);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(&self.scratch.z_p);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(&self.scratch.z_q);
     }
 
-    fn apply_transpose(&self, x: &[f64], z: &mut [f64]) {
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
         // Transpose of GS requires reversing sweep order (q then p)
-        let mut scratch = self.scratch.lock().unwrap();
-        let SparseGSScratch {
-            z_p,
-            z_q,
-            temp_p,
-            temp_q,
-        } = &mut *scratch;
-
         let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
         let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
 
-        z_p.iter_mut().for_each(|v| *v = 0.0);
-        z_q.iter_mut().for_each(|v| *v = 0.0);
+        self.scratch.z_p.iter_mut().for_each(|v| *v = 0.0);
+        self.scratch.z_q.iter_mut().for_each(|v| *v = 0.0);
 
         // Reverse order: q then p
         for _ in 0..self.inner_iters {
             // sweep_q first
-            self.mqp_matvec(z_p, temp_q);
-            for ((z_i, &t), (&x_i, &inv_d)) in z_q
+            sparse_csr_matvec(
+                &self.mqp_row_ptr,
+                &self.mqp_col_idx,
+                &self.mqp_values,
+                &self.scratch.z_p,
+                &mut self.scratch.temp_q,
+            );
+            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_q
                 .iter_mut()
-                .zip(temp_q.iter())
+                .zip(self.scratch.temp_q.iter())
                 .zip(x_q.iter().zip(self.inv_diag_q.iter()))
             {
                 *z_i = (x_i - t) * inv_d;
             }
 
             // sweep_p second
-            self.mpq_matvec(z_q, temp_p);
-            for ((z_i, &t), (&x_i, &inv_d)) in z_p
+            sparse_csr_matvec(
+                &self.mpq_row_ptr,
+                &self.mpq_col_idx,
+                &self.mpq_values,
+                &self.scratch.z_q,
+                &mut self.scratch.temp_p,
+            );
+            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_p
                 .iter_mut()
-                .zip(temp_p.iter())
+                .zip(self.scratch.temp_p.iter())
                 .zip(x_p.iter().zip(self.inv_diag_p.iter()))
             {
                 *z_i = (x_i - t) * inv_d;
@@ -766,170 +720,9 @@ impl RightPreconditioner for SparseGramPreconditioner {
         }
 
         z.copy_from_slice(x);
-        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(z_p);
-        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(z_q);
+        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(&self.scratch.z_p);
+        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(&self.scratch.z_q);
     }
-}
-
-// =============================================================================
-// P5: Two-FE Laplacian Preconditioner (Support-Graph / Tree-PCG)
-// =============================================================================
-
-/// Two-FE Laplacian preconditioner using support-graph PCG.
-///
-/// This preconditioner builds a spanning forest for the bipartite 2-FE graph
-/// and uses tree-based Laplacian solves as a preconditioner within fixed-iteration
-/// PCG. The key insight is that tree Laplacians can be solved in O(V) time.
-///
-/// # Algorithm
-/// 1. Extract 2-FE pair coefficients from global coefficient vector
-/// 2. Run fixed-iteration PCG on the graph Laplacian: `x ≈ L^{-1} * rhs`
-/// 3. Write solution back to global coefficient vector
-///
-/// # Cost
-/// - Construction: O(n_obs) for forest building
-/// - Apply: O(V * k_inner) where V = Kp + Kq
-pub struct TwoFeLaplacianPreconditioner {
-    /// Index of first FE in the 2-block subsystem
-    #[allow(dead_code)]
-    fe_p: usize,
-    /// Index of second FE in the 2-block subsystem
-    #[allow(dead_code)]
-    fe_q: usize,
-    /// Coefficient start offset for FE p in global coefficient vector
-    coef_start_p: usize,
-    /// Coefficient start offset for FE q in global coefficient vector
-    coef_start_q: usize,
-    /// Number of groups in FE p
-    kp: usize,
-    /// Number of groups in FE q
-    kq: usize,
-    /// Total nodes in Laplacian: V = kp + kq
-    v: usize,
-    /// The Laplacian operator (owns edge representation and components)
-    laplacian: LaplacianOp,
-    /// The spanning forest for tree preconditioning
-    forest: SpanningForest,
-    /// Connected components for gauge projection
-    components: ComponentsCSR,
-    /// Fixed-iteration PCG solver (uses Mutex for interior mutability)
-    pcg: std::sync::Mutex<FixedPCG>,
-    /// Scratch buffer for local RHS (length V)
-    rhs_scratch: std::sync::Mutex<Vec<f64>>,
-    /// Scratch buffer for local solution (length V)
-    sol_scratch: std::sync::Mutex<Vec<f64>>,
-}
-
-impl TwoFeLaplacianPreconditioner {
-    /// Create a two-FE Laplacian preconditioner.
-    ///
-    /// # Arguments
-    /// * `ctx` - DemeanContext with FE information
-    /// * `fe_p` - First FE index (or None for auto-select)
-    /// * `fe_q` - Second FE index (or None for auto-select)
-    /// * `k_inner` - Number of inner PCG iterations (typically 5-15)
-    /// * `aggregate_edges` - Whether to use aggregated edge representation
-    pub fn new(
-        ctx: &DemeanContext,
-        fe_p: Option<usize>,
-        fe_q: Option<usize>,
-        k_inner: usize,
-        aggregate_edges: bool,
-    ) -> Self {
-        // Auto-select FE pair if not specified
-        let (p, q) = match (fe_p, fe_q) {
-            (Some(p), Some(q)) => (p, q),
-            _ => select_best_fe_pair(ctx),
-        };
-
-        let fe_p_info = &ctx.fe_infos[p];
-        let fe_q_info = &ctx.fe_infos[q];
-
-        let kp = fe_p_info.n_groups;
-        let kq = fe_q_info.n_groups;
-        let v = kp + kq;
-
-        // Build connected components
-        let mut uf = UnionFind::new(v);
-        for (&gp, &gq) in fe_p_info.group_ids.iter().zip(fe_q_info.group_ids.iter()) {
-            uf.union(gp, kp + gq);
-        }
-        let components = ComponentsCSR::from_union_find(&mut uf, v);
-
-        // Build Laplacian operator
-        let laplacian = if aggregate_edges {
-            LaplacianOp::new_aggregated(
-                &fe_p_info.group_ids,
-                &fe_q_info.group_ids,
-                kp,
-                kq,
-                None, // TODO: support weighted edges
-            )
-        } else {
-            LaplacianOp::new_streaming(
-                fe_p_info.group_ids.clone(),
-                fe_q_info.group_ids.clone(),
-                kp,
-                kq,
-                None, // TODO: support weighted edges
-            )
-        };
-
-        // Build spanning forest
-        let forest = SpanningForest::build_simple(
-            &fe_p_info.group_ids,
-            &fe_q_info.group_ids,
-            kp,
-            kq,
-            None,
-            &components,
-        );
-
-        // Create PCG solver (pass kp for sign transformation)
-        let pcg = FixedPCG::new(v, kp, k_inner);
-
-        Self {
-            fe_p: p,
-            fe_q: q,
-            coef_start_p: fe_p_info.coef_start,
-            coef_start_q: fe_q_info.coef_start,
-            kp,
-            kq,
-            v,
-            laplacian,
-            forest,
-            components,
-            pcg: std::sync::Mutex::new(pcg),
-            rhs_scratch: std::sync::Mutex::new(vec![0.0; v]),
-            sol_scratch: std::sync::Mutex::new(vec![0.0; v]),
-        }
-    }
-}
-
-impl RightPreconditioner for TwoFeLaplacianPreconditioner {
-    fn apply(&self, x: &[f64], z: &mut [f64]) {
-        // 1. Initialize z = x (pass through non-pair coefficients)
-        z.copy_from_slice(x);
-
-        // 2. Extract pair coefficients into local RHS
-        let mut rhs = self.rhs_scratch.lock().unwrap();
-        let mut sol = self.sol_scratch.lock().unwrap();
-
-        // Copy FE p coefficients to local nodes 0..kp
-        rhs[..self.kp].copy_from_slice(&x[self.coef_start_p..self.coef_start_p + self.kp]);
-        // Copy FE q coefficients to local nodes kp..v
-        rhs[self.kp..].copy_from_slice(&x[self.coef_start_q..self.coef_start_q + self.kq]);
-
-        // 3. Run fixed-iter PCG: sol ≈ L^{-1} * rhs
-        let mut pcg = self.pcg.lock().unwrap();
-        pcg.solve(&self.laplacian, &self.forest, &self.components, &rhs, &mut sol);
-
-        // 4. Write solution back to z at pair coordinates
-        z[self.coef_start_p..self.coef_start_p + self.kp].copy_from_slice(&sol[..self.kp]);
-        z[self.coef_start_q..self.coef_start_q + self.kq].copy_from_slice(&sol[self.kp..]);
-    }
-
-    // apply_transpose: same as apply (symmetric preconditioner)
 }
 
 // =============================================================================
@@ -979,31 +772,16 @@ pub enum PreconditionerKind {
         /// Number of inner CG iterations
         inner_iters: usize,
     },
-
-    /// Two-FE Laplacian preconditioner using support-graph PCG (P5).
-    /// Builds spanning forest and uses tree-preconditioned CG.
-    ///
-    /// **WARNING**: This preconditioner is experimental and has known convergence
-    /// issues. The tree Gram solver only works correctly for vectors in Range(G),
-    /// but LSMR applies it to arbitrary Krylov vectors. Use `SparseGram` instead
-    /// for reliable results.
-    Laplacian {
-        /// First FE index (or None for auto-select)
-        fe_p: Option<usize>,
-        /// Second FE index (or None for auto-select)
-        fe_q: Option<usize>,
-        /// Number of inner PCG iterations
-        k_inner: usize,
-        /// Whether to use aggregated edges (vs streaming)
-        aggregate_edges: bool,
-    },
 }
 
 /// Boxed preconditioner for runtime polymorphism.
-pub type BoxedPreconditioner = Box<dyn RightPreconditioner + Send + Sync>;
+pub type BoxedPreconditioner<'a> = Box<dyn RightPreconditioner + Send + Sync + 'a>;
 
 /// Create a preconditioner from configuration.
-pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> BoxedPreconditioner {
+pub fn create_preconditioner<'a>(
+    ctx: &'a DemeanContext,
+    kind: PreconditionerKind,
+) -> BoxedPreconditioner<'a> {
     match kind {
         PreconditionerKind::None => Box::new(IdentityPreconditioner),
         PreconditionerKind::Diagonal => Box::new(DiagonalPreconditioner::new(ctx)),
@@ -1030,21 +808,6 @@ pub fn create_preconditioner(ctx: &DemeanContext, kind: PreconditionerKind) -> B
             // Use sparse Gram preconditioner with PCG inner solver
             Box::new(SparseGramPreconditioner::new(ctx, fe_p, fe_q, inner_iters))
         }
-        PreconditionerKind::Laplacian {
-            fe_p,
-            fe_q,
-            k_inner,
-            aggregate_edges,
-        } => {
-            // Use Laplacian preconditioner with tree-preconditioned PCG
-            Box::new(TwoFeLaplacianPreconditioner::new(
-                ctx,
-                fe_p,
-                fe_q,
-                k_inner,
-                aggregate_edges,
-            ))
-        }
     }
 }
 
@@ -1054,7 +817,7 @@ mod tests {
 
     #[test]
     fn test_identity_preconditioner() {
-        let precond = IdentityPreconditioner;
+        let mut precond = IdentityPreconditioner;
         let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let mut z = vec![0.0; 5];
 
@@ -1064,7 +827,7 @@ mod tests {
 
     #[test]
     fn test_identity_is_symmetric() {
-        let precond = IdentityPreconditioner;
+        let mut precond = IdentityPreconditioner;
         let x = vec![1.0, 2.0, 3.0];
         let mut z1 = vec![0.0; 3];
         let mut z2 = vec![0.0; 3];
