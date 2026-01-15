@@ -31,7 +31,7 @@ pub mod accelerator;
 pub mod demeaner;
 pub mod lsmr;
 pub mod projection;
-mod sweep;
+pub(crate) mod sweep;
 pub mod types;
 
 use demeaner::{Demeaner, MultiFEDemeaner, SingleFEDemeaner, TwoFEDemeaner};
@@ -130,6 +130,7 @@ pub(crate) fn demean(
     };
 
     let not_converged = Arc::new(AtomicUsize::new(0));
+    let max_iterations = Arc::new(AtomicUsize::new(0));
     let mut demeaned = Array2::<f64>::zeros((n_samples, n_features));
 
     // Create context with optional FE reordering
@@ -165,6 +166,7 @@ pub(crate) fn demean(
                 if result.convergence == ConvergenceState::NotConverged {
                     not_converged.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 }
+                max_iterations.fetch_max(result.iterations, std::sync::atomic::Ordering::Relaxed);
 
                 Zip::from(&mut dem_col)
                     .and(&result.demeaned)
@@ -185,6 +187,7 @@ pub(crate) fn demean(
         demeaned,
         fe_coefficients,
         success,
+        max_iterations: max_iterations.load(std::sync::atomic::Ordering::Relaxed),
     }
 }
 
@@ -199,7 +202,7 @@ pub(crate) fn demean(
 /// * `maxiter` - Maximum iterations (default: 100_000)
 /// * `reorder_fe` - Whether to reorder FEs by size (default: false)
 /// * `solver` - Solver algorithm: "gauss_seidel" (default) or "lsmr"
-/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming", "sparse_gram", "laplacian"
+/// * `lsmr_preconditioner` - LSMR preconditioner: "none", "diagonal" (default), "deflation", "streaming", "sparse_gram"
 ///
 /// # Returns
 ///
@@ -207,6 +210,7 @@ pub(crate) fn demean(
 /// - "demeaned": Array of demeaned values (n_samples, n_features)
 /// - "fe_coefficients": Array of FE coefficients (n_coef, n_features)
 /// - "success": Boolean indicating convergence
+/// - "iterations": Maximum iterations across all columns
 #[pyfunction]
 #[pyo3(signature = (x, flist, weights=None, tol=1e-8, maxiter=100_000, reorder_fe=false, solver="gauss_seidel", lsmr_preconditioner="diagonal"))]
 pub fn _demean_rs<'py>(
@@ -249,17 +253,9 @@ pub fn _demean_rs<'py>(
             fe_q: None,
             inner_iters: 5,
         },
-        // EXPERIMENTAL: Laplacian preconditioner has known convergence issues
-        // with arbitrary Krylov vectors. Use "sparse_gram" instead.
-        "laplacian" => PreconditionerKind::Laplacian {
-            fe_p: None,
-            fe_q: None,
-            k_inner: 10,
-            aggregate_edges: false,
-        },
         _ => {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', 'streaming', 'sparse_gram', or 'laplacian'.",
+                "Unknown preconditioner: '{}'. Use 'none', 'diagonal', 'deflation', 'streaming', or 'sparse_gram'.",
                 lsmr_preconditioner
             )))
         }
@@ -291,6 +287,7 @@ pub fn _demean_rs<'py>(
         PyArray2::from_owned_array(py, result.fe_coefficients),
     )?;
     dict.set_item("success", result.success)?;
+    dict.set_item("iterations", result.max_iterations)?;
     Ok(dict)
 }
 

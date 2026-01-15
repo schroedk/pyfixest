@@ -519,4 +519,7 @@ pub(crate) struct DemeanMultiResult {
 
     /// True if all columns converged successfully.
     pub success: bool,
+
+    /// Maximum iterations across all columns.
+    pub max_iterations: usize,
 }
