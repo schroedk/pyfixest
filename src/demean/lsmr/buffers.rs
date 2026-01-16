@@ -1,18 +1,25 @@
-//! Pre-allocated buffers for LSMR iteration.
+//! Pre-allocated workspace for LSMR iteration.
 //!
-//! This module provides `LSMRBuffers` which holds all working vectors needed
-//! by the LSMR algorithm. Buffers are allocated once and reused across
-//! iterations and multiple solve() calls to avoid allocation overhead.
+//! This module provides `LSMRBuffers` which holds all working vectors and scalar
+//! state needed by the LSMR algorithm. Workspace is allocated once and reused
+//! across iterations and multiple solve() calls to avoid allocation overhead.
 
-/// Pre-allocated buffers for LSMR iteration.
+/// Pre-allocated workspace for LSMR iteration.
 ///
-/// LSMR uses Golub-Kahan bidiagonalization which maintains several vectors:
+/// Contains both vector buffers and scalar state for the algorithm:
+///
+/// **Vectors** (Golub-Kahan bidiagonalization):
 /// - `u`: Bidiagonalization vector in observation space
 /// - `v`: Bidiagonalization vector in coefficient space
 /// - `w`: Update direction vector
 /// - `x`: Current solution estimate
 ///
-/// All vectors are allocated at construction and reused via `reset()`.
+/// **Scalars** (iteration state):
+/// - Bidiagonalization: `alpha`, `beta`
+/// - QR factorization: `alphabar`, `rho_bar`, `phi_bar`, `c`, `s`
+/// - Convergence monitoring: `anorm`, `acond`, `rnorm`, `arnorm`
+///
+/// All state is reset via `reset()` between solves.
 #[derive(Clone)]
 pub struct LSMRBuffers {
     // Bidiagonalization vectors
@@ -32,57 +39,7 @@ pub struct LSMRBuffers {
     pub(crate) precond_scratch: Vec<f64>,
     /// Scratch for matvec operations (length: n_obs)
     pub(crate) matvec_scratch: Vec<f64>,
-}
 
-impl LSMRBuffers {
-    /// Create new LSMR buffers for the given problem dimensions.
-    ///
-    /// # Arguments
-    /// * `n_obs` - Number of observations (row space dimension)
-    /// * `n_coef` - Number of coefficients (column space dimension)
-    pub fn new(n_obs: usize, n_coef: usize) -> Self {
-        Self {
-            u: vec![0.0; n_obs],
-            v: vec![0.0; n_coef],
-            w: vec![0.0; n_coef],
-            x: vec![0.0; n_coef],
-            precond_scratch: vec![0.0; n_coef],
-            matvec_scratch: vec![0.0; n_obs],
-        }
-    }
-
-    /// Reset all buffers to zero for a new solve.
-    ///
-    /// This is more efficient than reallocating for repeated solves
-    /// on problems with the same dimensions.
-    pub fn reset(&mut self) {
-        self.u.fill(0.0);
-        self.v.fill(0.0);
-        self.w.fill(0.0);
-        self.x.fill(0.0);
-        // precond_scratch and matvec_scratch don't need reset as they're
-        // always overwritten before use
-    }
-
-    /// Get the observation space dimension.
-    #[inline]
-    pub fn n_obs(&self) -> usize {
-        self.u.len()
-    }
-
-    /// Get the coefficient space dimension.
-    #[inline]
-    pub fn n_coef(&self) -> usize {
-        self.v.len()
-    }
-}
-
-/// Scalar state for LSMR iteration.
-///
-/// These scalars track the bidiagonalization and QR factorization state
-/// across iterations. Separated from buffers for clarity.
-#[derive(Clone, Copy, Default)]
-pub struct LSMRState {
     // Bidiagonalization scalars
     /// alpha_k from bidiagonalization
     pub(crate) alpha: f64,
@@ -112,15 +69,73 @@ pub struct LSMRState {
     pub(crate) arnorm: f64,
 }
 
-impl LSMRState {
-    /// Create a new LSMR state with default values.
-    pub fn new() -> Self {
-        Self::default()
+impl LSMRBuffers {
+    /// Create new LSMR workspace for the given problem dimensions.
+    ///
+    /// # Arguments
+    /// * `n_obs` - Number of observations (row space dimension)
+    /// * `n_coef` - Number of coefficients (column space dimension)
+    pub fn new(n_obs: usize, n_coef: usize) -> Self {
+        Self {
+            // Vectors
+            u: vec![0.0; n_obs],
+            v: vec![0.0; n_coef],
+            w: vec![0.0; n_coef],
+            x: vec![0.0; n_coef],
+            precond_scratch: vec![0.0; n_coef],
+            matvec_scratch: vec![0.0; n_obs],
+            // Scalars (all zero-initialized)
+            alpha: 0.0,
+            beta: 0.0,
+            alphabar: 0.0,
+            rho_bar: 0.0,
+            phi_bar: 0.0,
+            c: 0.0,
+            s: 0.0,
+            anorm: 0.0,
+            acond: 0.0,
+            rnorm: 0.0,
+            arnorm: 0.0,
+        }
     }
 
-    /// Reset state for a new solve.
+    /// Reset all workspace state for a new solve.
+    ///
+    /// This is more efficient than reallocating for repeated solves
+    /// on problems with the same dimensions.
     pub fn reset(&mut self) {
-        *self = Self::default();
+        // Reset vectors
+        self.u.fill(0.0);
+        self.v.fill(0.0);
+        self.w.fill(0.0);
+        self.x.fill(0.0);
+        // precond_scratch and matvec_scratch don't need reset as they're
+        // always overwritten before use
+
+        // Reset scalars
+        self.alpha = 0.0;
+        self.beta = 0.0;
+        self.alphabar = 0.0;
+        self.rho_bar = 0.0;
+        self.phi_bar = 0.0;
+        self.c = 0.0;
+        self.s = 0.0;
+        self.anorm = 0.0;
+        self.acond = 0.0;
+        self.rnorm = 0.0;
+        self.arnorm = 0.0;
+    }
+
+    /// Get the observation space dimension.
+    #[inline]
+    pub fn n_obs(&self) -> usize {
+        self.u.len()
+    }
+
+    /// Get the coefficient space dimension.
+    #[inline]
+    pub fn n_coef(&self) -> usize {
+        self.v.len()
     }
 }
 

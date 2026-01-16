@@ -18,7 +18,7 @@
 //! - Fong, D. C.-L., & Saunders, M. A. (2011). LSMR: An iterative algorithm
 //!   for sparse least-squares problems. SIAM J. Sci. Comput., 33(5), 2950-2971.
 
-use super::buffers::{LSMRBuffers, LSMRState};
+use super::buffers::LSMRBuffers;
 use super::linear_operator::LinearOperator;
 
 /// Result of an LSMR solve.
@@ -65,21 +65,16 @@ impl Default for LSMRConfig {
 /// LSMR solver kernel.
 ///
 /// Implements the core LSMR algorithm using Golub-Kahan bidiagonalization.
-/// Uses pre-allocated buffers for zero-allocation iteration.
+/// Uses pre-allocated workspace for zero-allocation iteration.
 pub struct LSMRKernel<'a> {
     config: LSMRConfig,
     buffers: &'a mut LSMRBuffers,
-    state: LSMRState,
 }
 
 impl<'a> LSMRKernel<'a> {
-    /// Create a new LSMR kernel with the given configuration and buffers.
+    /// Create a new LSMR kernel with the given configuration and workspace.
     pub fn new(config: LSMRConfig, buffers: &'a mut LSMRBuffers) -> Self {
-        Self {
-            config,
-            buffers,
-            state: LSMRState::new(),
-        }
+        Self { config, buffers }
     }
 
     /// Solve min ||A x - b||₂.
@@ -100,42 +95,41 @@ impl<'a> LSMRKernel<'a> {
         debug_assert_eq!(self.buffers.n_obs(), n_obs);
         debug_assert_eq!(self.buffers.n_coef(), n_coef);
 
-        // Reset state for new solve
+        // Reset workspace for new solve
         self.buffers.reset();
-        self.state.reset();
 
         // Initialize: beta_1 * u_1 = b
         self.buffers.u.copy_from_slice(b);
-        self.state.beta = norm2(&self.buffers.u);
+        self.buffers.beta = norm2(&self.buffers.u);
 
-        if self.state.beta > 0.0 {
-            scale_inplace(&mut self.buffers.u, 1.0 / self.state.beta);
+        if self.buffers.beta > 0.0 {
+            scale_inplace(&mut self.buffers.u, 1.0 / self.buffers.beta);
         }
 
         // alpha_1 * v_1 = A^T * u_1
         operator.rmatvec(&self.buffers.u, &mut self.buffers.v);
-        self.state.alpha = norm2(&self.buffers.v);
+        self.buffers.alpha = norm2(&self.buffers.v);
 
-        if self.state.alpha > 0.0 {
-            scale_inplace(&mut self.buffers.v, 1.0 / self.state.alpha);
+        if self.buffers.alpha > 0.0 {
+            scale_inplace(&mut self.buffers.v, 1.0 / self.buffers.alpha);
         }
 
         // Initialize w = v
         self.buffers.w.copy_from_slice(&self.buffers.v);
 
         // Initialize scalars for QR factorization
-        self.state.alphabar = self.state.alpha; // For damped LSMR
-        self.state.rho_bar = self.state.alpha;
-        self.state.phi_bar = self.state.beta;
-        self.state.rnorm = self.state.beta;
-        self.state.arnorm = self.state.alpha * self.state.beta;
+        self.buffers.alphabar = self.buffers.alpha; // For damped LSMR
+        self.buffers.rho_bar = self.buffers.alpha;
+        self.buffers.phi_bar = self.buffers.beta;
+        self.buffers.rnorm = self.buffers.beta;
+        self.buffers.arnorm = self.buffers.alpha * self.buffers.beta;
 
         // Estimate of ||A||_F (includes damp for regularized case)
         let damp = self.config.damp;
-        self.state.anorm = (self.state.alpha * self.state.alpha + damp * damp).sqrt();
+        self.buffers.anorm = (self.buffers.alpha * self.buffers.alpha + damp * damp).sqrt();
 
         // Check for trivial case (zero RHS)
-        if self.state.beta == 0.0 {
+        if self.buffers.beta == 0.0 {
             x.fill(0.0);
             return LSMRResult {
                 iterations: 0,
@@ -146,12 +140,12 @@ impl<'a> LSMRKernel<'a> {
         }
 
         // Check for immediate convergence
-        if self.state.arnorm == 0.0 {
+        if self.buffers.arnorm == 0.0 {
             x.fill(0.0);
             return LSMRResult {
                 iterations: 0,
                 converged: true,
-                residual_norm: self.state.rnorm,
+                residual_norm: self.buffers.rnorm,
                 atr_norm: 0.0,
             };
         }
@@ -168,9 +162,9 @@ impl<'a> LSMRKernel<'a> {
             self.update_norms();
 
             // Check convergence
-            let test1 = self.state.rnorm / self.state.beta; // ||r|| / ||b||
-            let test2 = if self.state.anorm * self.state.rnorm > 0.0 {
-                self.state.arnorm / (self.state.anorm * self.state.rnorm)
+            let test1 = self.buffers.rnorm / self.buffers.beta; // ||r|| / ||b||
+            let test2 = if self.buffers.anorm * self.buffers.rnorm > 0.0 {
+                self.buffers.arnorm / (self.buffers.anorm * self.buffers.rnorm)
             } else {
                 0.0
             };
@@ -181,19 +175,19 @@ impl<'a> LSMRKernel<'a> {
                 return LSMRResult {
                     iterations: iter,
                     converged: true,
-                    residual_norm: self.state.rnorm,
-                    atr_norm: self.state.arnorm,
+                    residual_norm: self.buffers.rnorm,
+                    atr_norm: self.buffers.arnorm,
                 };
             }
 
             // Check condition number limit
-            if self.state.acond >= self.config.conlim {
+            if self.buffers.acond >= self.config.conlim {
                 x.copy_from_slice(&self.buffers.x);
                 return LSMRResult {
                     iterations: iter,
                     converged: false,
-                    residual_norm: self.state.rnorm,
-                    atr_norm: self.state.arnorm,
+                    residual_norm: self.buffers.rnorm,
+                    atr_norm: self.buffers.arnorm,
                 };
             }
         }
@@ -203,8 +197,8 @@ impl<'a> LSMRKernel<'a> {
         LSMRResult {
             iterations: self.config.maxiter,
             converged: false,
-            residual_norm: self.state.rnorm,
-            atr_norm: self.state.arnorm,
+            residual_norm: self.buffers.rnorm,
+            atr_norm: self.buffers.arnorm,
         }
     }
 
@@ -214,32 +208,32 @@ impl<'a> LSMRKernel<'a> {
         // u = A * v - alpha * u
         operator.matvec(&self.buffers.v, &mut self.buffers.matvec_scratch);
         for (u_i, &s_i) in self.buffers.u.iter_mut().zip(self.buffers.matvec_scratch.iter()) {
-            *u_i = s_i - self.state.alpha * *u_i;
+            *u_i = s_i - self.buffers.alpha * *u_i;
         }
 
         // beta = ||u||
-        self.state.beta = norm2(&self.buffers.u);
+        self.buffers.beta = norm2(&self.buffers.u);
 
-        if self.state.beta > 0.0 {
-            scale_inplace(&mut self.buffers.u, 1.0 / self.state.beta);
+        if self.buffers.beta > 0.0 {
+            scale_inplace(&mut self.buffers.u, 1.0 / self.buffers.beta);
 
             // Update ||A||_F estimate
-            self.state.anorm = (self.state.anorm.powi(2)
-                + self.state.alpha.powi(2)
-                + self.state.beta.powi(2))
+            self.buffers.anorm = (self.buffers.anorm.powi(2)
+                + self.buffers.alpha.powi(2)
+                + self.buffers.beta.powi(2))
             .sqrt();
 
             // v = A^T * u - beta * v
             operator.rmatvec(&self.buffers.u, &mut self.buffers.precond_scratch);
             for (v_i, &s_i) in self.buffers.v.iter_mut().zip(self.buffers.precond_scratch.iter()) {
-                *v_i = s_i - self.state.beta * *v_i;
+                *v_i = s_i - self.buffers.beta * *v_i;
             }
 
             // alpha = ||v||
-            self.state.alpha = norm2(&self.buffers.v);
+            self.buffers.alpha = norm2(&self.buffers.v);
 
-            if self.state.alpha > 0.0 {
-                scale_inplace(&mut self.buffers.v, 1.0 / self.state.alpha);
+            if self.buffers.alpha > 0.0 {
+                scale_inplace(&mut self.buffers.v, 1.0 / self.buffers.alpha);
             }
         }
     }
@@ -259,25 +253,25 @@ impl<'a> LSMRKernel<'a> {
         // First rotation (for damping): [alphabar; damp] -> [alphahat; 0]
         // When damp=0: chat=1, alphahat=alphabar (no change)
         let (chat, alphahat) = if damp == 0.0 {
-            (1.0, self.state.alphabar)
+            (1.0, self.buffers.alphabar)
         } else {
-            let (c, _s, r) = sym_ortho(self.state.alphabar, damp);
+            let (c, _s, r) = sym_ortho(self.buffers.alphabar, damp);
             (c, r)
         };
 
         // Second rotation: [alphahat; beta] -> [rho; 0]
         // Use direct computation to preserve sign of alphahat
-        let rho = (alphahat * alphahat + self.state.beta * self.state.beta).sqrt();
+        let rho = (alphahat * alphahat + self.buffers.beta * self.buffers.beta).sqrt();
         let (c, s) = if rho > 1e-15 {
-            (alphahat / rho, self.state.beta / rho)
+            (alphahat / rho, self.buffers.beta / rho)
         } else {
             (1.0, 0.0)
         };
 
-        let theta_new = s * self.state.alpha;
-        let rho_bar_new = -c * self.state.alpha;
-        let phi = c * chat * self.state.phi_bar;
-        let phi_bar_new = s * self.state.phi_bar;
+        let theta_new = s * self.buffers.alpha;
+        let rho_bar_new = -c * self.buffers.alpha;
+        let phi = c * chat * self.buffers.phi_bar;
+        let phi_bar_new = s * self.buffers.phi_bar;
 
         // Fused update: x = x + (phi/rho)*w and w = v - (theta_new/rho)*w
         if rho > 1e-15 {
@@ -299,11 +293,11 @@ impl<'a> LSMRKernel<'a> {
 
         // Update state for next iteration
         // alphabar carries across iterations; when damp=0, alphabar = rho_bar (with sign)
-        self.state.alphabar = rho_bar_new;
-        self.state.rho_bar = rho_bar_new;
-        self.state.phi_bar = phi_bar_new;
-        self.state.c = c;
-        self.state.s = s;
+        self.buffers.alphabar = rho_bar_new;
+        self.buffers.rho_bar = rho_bar_new;
+        self.buffers.phi_bar = phi_bar_new;
+        self.buffers.c = c;
+        self.buffers.s = s;
     }
 
     /// Update norm estimates for convergence checking.
@@ -312,21 +306,21 @@ impl<'a> LSMRKernel<'a> {
         let damp = self.config.damp;
 
         // Update ||A||_F estimate (includes damp for regularized case)
-        self.state.anorm = (self.state.anorm.powi(2)
-            + self.state.alpha.powi(2)
-            + self.state.beta.powi(2)
+        self.buffers.anorm = (self.buffers.anorm.powi(2)
+            + self.buffers.alpha.powi(2)
+            + self.buffers.beta.powi(2)
             + damp * damp)
             .sqrt();
 
         // ||r|| estimate from QR factorization
-        self.state.rnorm = self.state.phi_bar.abs();
+        self.buffers.rnorm = self.buffers.phi_bar.abs();
 
         // ||A^T r|| estimate
-        self.state.arnorm = (self.state.alpha * self.state.c.abs() * self.state.phi_bar).abs();
+        self.buffers.arnorm = (self.buffers.alpha * self.buffers.c.abs() * self.buffers.phi_bar).abs();
 
         // Condition number estimate
-        if self.state.anorm > 0.0 && self.state.rho_bar.abs() > 0.0 {
-            self.state.acond = self.state.anorm / self.state.rho_bar.abs();
+        if self.buffers.anorm > 0.0 && self.buffers.rho_bar.abs() > 0.0 {
+            self.buffers.acond = self.buffers.anorm / self.buffers.rho_bar.abs();
         }
     }
 }
