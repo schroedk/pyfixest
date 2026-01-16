@@ -112,48 +112,6 @@ impl RightPreconditioner for DiagonalPreconditioner {
 }
 
 // =============================================================================
-// Composed Preconditioner
-// =============================================================================
-
-/// Composed preconditioner: applies P1 then P2.
-///
-/// For right preconditioning: M^{-1} = P2^{-1} * P1^{-1}
-/// So apply(x) computes: P2(P1(x))
-pub struct ComposedPreconditioner<P1, P2> {
-    p1: P1,
-    p2: P2,
-    /// Scratch buffer for intermediate result
-    scratch: Vec<f64>,
-}
-
-impl<P1: RightPreconditioner, P2: RightPreconditioner> ComposedPreconditioner<P1, P2> {
-    /// Create a composed preconditioner.
-    pub fn new(p1: P1, p2: P2, n_coef: usize) -> Self {
-        Self {
-            p1,
-            p2,
-            scratch: vec![0.0; n_coef],
-        }
-    }
-}
-
-impl<P1: RightPreconditioner, P2: RightPreconditioner> RightPreconditioner
-    for ComposedPreconditioner<P1, P2>
-{
-    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
-        // z = P2(P1(x))
-        self.p1.apply(x, &mut self.scratch);
-        self.p2.apply(&self.scratch, z);
-    }
-
-    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
-        // For transpose: (P2 * P1)^T = P1^T * P2^T
-        self.p2.apply_transpose(x, &mut self.scratch);
-        self.p1.apply_transpose(&self.scratch, z);
-    }
-}
-
-// =============================================================================
 // P3: Two-Block Streaming Preconditioner
 // =============================================================================
 
@@ -517,12 +475,12 @@ fn sparse_csr_matvec(
     }
 }
 
-impl RightPreconditioner for SparseGramPreconditioner {
-    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
-        // Extract x_p and x_q from the full coefficient vector
-        let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
-        let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
-
+impl SparseGramPreconditioner {
+    /// Perform Gauss-Seidel sweep with specified order.
+    ///
+    /// * `p_then_q = true`: sweep p first, then q (forward)
+    /// * `p_then_q = false`: sweep q first, then p (transpose)
+    fn gs_sweep(&mut self, x_p: &[f64], x_q: &[f64], p_then_q: bool) {
         // Initialize z_p, z_q = 0
         self.scratch.z_p.iter_mut().for_each(|v| *v = 0.0);
         self.scratch.z_q.iter_mut().for_each(|v| *v = 0.0);
@@ -531,91 +489,76 @@ impl RightPreconditioner for SparseGramPreconditioner {
         // Solving: diag(count_p) @ z_p + M_pq @ z_q = x_p
         //          M_qp @ z_p + diag(count_q) @ z_q = x_q
         for _ in 0..self.inner_iters {
-            // sweep_p: z_p = (x_p - M_pq @ z_q) * inv_diag_p
-            sparse_csr_matvec(
-                &self.mpq_row_ptr,
-                &self.mpq_col_idx,
-                &self.mpq_values,
-                &self.scratch.z_q,
-                &mut self.scratch.temp_p,
-            );
-            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_p
-                .iter_mut()
-                .zip(self.scratch.temp_p.iter())
-                .zip(x_p.iter().zip(self.inv_diag_p.iter()))
-            {
-                *z_i = (x_i - t) * inv_d;
-            }
-
-            // sweep_q: z_q = (x_q - M_qp @ z_p) * inv_diag_q
-            sparse_csr_matvec(
-                &self.mqp_row_ptr,
-                &self.mqp_col_idx,
-                &self.mqp_values,
-                &self.scratch.z_p,
-                &mut self.scratch.temp_q,
-            );
-            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_q
-                .iter_mut()
-                .zip(self.scratch.temp_q.iter())
-                .zip(x_q.iter().zip(self.inv_diag_q.iter()))
-            {
-                *z_i = (x_i - t) * inv_d;
+            if p_then_q {
+                self.sweep_p(x_p);
+                self.sweep_q(x_q);
+            } else {
+                self.sweep_q(x_q);
+                self.sweep_p(x_p);
             }
         }
+    }
 
-        // Copy result back to z, pass through other coefficients
+    /// Sweep p: z_p = (x_p - M_pq @ z_q) * inv_diag_p
+    #[inline]
+    fn sweep_p(&mut self, x_p: &[f64]) {
+        sparse_csr_matvec(
+            &self.mpq_row_ptr,
+            &self.mpq_col_idx,
+            &self.mpq_values,
+            &self.scratch.z_q,
+            &mut self.scratch.temp_p,
+        );
+        for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_p
+            .iter_mut()
+            .zip(self.scratch.temp_p.iter())
+            .zip(x_p.iter().zip(self.inv_diag_p.iter()))
+        {
+            *z_i = (x_i - t) * inv_d;
+        }
+    }
+
+    /// Sweep q: z_q = (x_q - M_qp @ z_p) * inv_diag_q
+    #[inline]
+    fn sweep_q(&mut self, x_q: &[f64]) {
+        sparse_csr_matvec(
+            &self.mqp_row_ptr,
+            &self.mqp_col_idx,
+            &self.mqp_values,
+            &self.scratch.z_p,
+            &mut self.scratch.temp_q,
+        );
+        for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_q
+            .iter_mut()
+            .zip(self.scratch.temp_q.iter())
+            .zip(x_q.iter().zip(self.inv_diag_q.iter()))
+        {
+            *z_i = (x_i - t) * inv_d;
+        }
+    }
+
+    /// Copy sweep results back to output vector.
+    #[inline]
+    fn copy_results(&self, x: &[f64], z: &mut [f64]) {
         z.copy_from_slice(x);
         z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(&self.scratch.z_p);
         z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(&self.scratch.z_q);
     }
+}
 
-    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
-        // Transpose of GS requires reversing sweep order (q then p)
+impl RightPreconditioner for SparseGramPreconditioner {
+    fn apply(&mut self, x: &[f64], z: &mut [f64]) {
         let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
         let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
+        self.gs_sweep(x_p, x_q, true); // p then q
+        self.copy_results(x, z);
+    }
 
-        self.scratch.z_p.iter_mut().for_each(|v| *v = 0.0);
-        self.scratch.z_q.iter_mut().for_each(|v| *v = 0.0);
-
-        // Reverse order: q then p
-        for _ in 0..self.inner_iters {
-            // sweep_q first
-            sparse_csr_matvec(
-                &self.mqp_row_ptr,
-                &self.mqp_col_idx,
-                &self.mqp_values,
-                &self.scratch.z_p,
-                &mut self.scratch.temp_q,
-            );
-            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_q
-                .iter_mut()
-                .zip(self.scratch.temp_q.iter())
-                .zip(x_q.iter().zip(self.inv_diag_q.iter()))
-            {
-                *z_i = (x_i - t) * inv_d;
-            }
-
-            // sweep_p second
-            sparse_csr_matvec(
-                &self.mpq_row_ptr,
-                &self.mpq_col_idx,
-                &self.mpq_values,
-                &self.scratch.z_q,
-                &mut self.scratch.temp_p,
-            );
-            for ((z_i, &t), (&x_i, &inv_d)) in self.scratch.z_p
-                .iter_mut()
-                .zip(self.scratch.temp_p.iter())
-                .zip(x_p.iter().zip(self.inv_diag_p.iter()))
-            {
-                *z_i = (x_i - t) * inv_d;
-            }
-        }
-
-        z.copy_from_slice(x);
-        z[self.coef_start_p..self.coef_start_p + self.n_groups_p].copy_from_slice(&self.scratch.z_p);
-        z[self.coef_start_q..self.coef_start_q + self.n_groups_q].copy_from_slice(&self.scratch.z_q);
+    fn apply_transpose(&mut self, x: &[f64], z: &mut [f64]) {
+        let x_p = &x[self.coef_start_p..self.coef_start_p + self.n_groups_p];
+        let x_q = &x[self.coef_start_q..self.coef_start_q + self.n_groups_q];
+        self.gs_sweep(x_p, x_q, false); // q then p (reversed for transpose)
+        self.copy_results(x, z);
     }
 }
 
