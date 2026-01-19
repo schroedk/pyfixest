@@ -4,19 +4,23 @@
 //! by Fong and Saunders (2011). LSMR uses Golub-Kahan bidiagonalization to
 //! solve least-squares problems without forming the normal equations.
 //!
+//! This implementation follows the reference Python implementation (pykrylov)
+//! by the original authors at Stanford.
+//!
 //! # Algorithm Overview
 //!
-//! LSMR solves: min ||A x - b||₂
+//! LSMR solves: min ||A x - b||₂  (or min ||Ax - b||² + λ²||x||² with damping)
 //!
 //! 1. **Bidiagonalization**: Build orthonormal bases U and V such that
 //!    A V = U B where B is lower bidiagonal
-//! 2. **QR factorization**: Apply Givens rotations to B
-//! 3. **Solution update**: Incrementally build x from the factorization
+//! 2. **QR factorization**: Apply Givens rotations to B (two rotation chains)
+//! 3. **Solution update**: Incrementally build x using two direction vectors h, hbar
 //!
 //! # References
 //!
 //! - Fong, D. C.-L., & Saunders, M. A. (2011). LSMR: An iterative algorithm
 //!   for sparse least-squares problems. SIAM J. Sci. Comput., 33(5), 2950-2971.
+//! - Reference implementation: https://github.com/PythonOptimizers/pykrylov
 
 use super::buffers::LSMRBuffers;
 use super::linear_operator::LinearOperator;
@@ -39,8 +43,10 @@ pub struct LSMRResult {
 /// LSMR configuration parameters.
 #[derive(Clone, Copy, Debug)]
 pub struct LSMRConfig {
-    /// Convergence tolerance for ||A^T r|| / (||A|| ||r||).
-    pub tol: f64,
+    /// Absolute tolerance for ||A^T r|| / (||A|| ||r||).
+    pub atol: f64,
+    /// Relative tolerance for ||r|| / ||b||.
+    pub btol: f64,
     /// Maximum number of iterations.
     pub maxiter: usize,
     /// Tolerance for condition number estimate (optional early stop).
@@ -54,10 +60,23 @@ pub struct LSMRConfig {
 impl Default for LSMRConfig {
     fn default() -> Self {
         Self {
-            tol: 1e-8,
+            atol: 1e-8,
+            btol: 1e-8,
             maxiter: 10_000,
             conlim: 1e8,
             damp: 0.0,
+        }
+    }
+}
+
+// Keep the old tol field for backward compatibility
+impl LSMRConfig {
+    /// Create config with a single tolerance (sets both atol and btol).
+    pub fn with_tol(tol: f64) -> Self {
+        Self {
+            atol: tol,
+            btol: tol,
+            ..Default::default()
         }
     }
 }
@@ -66,6 +85,8 @@ impl Default for LSMRConfig {
 ///
 /// Implements the core LSMR algorithm using Golub-Kahan bidiagonalization.
 /// Uses pre-allocated workspace for zero-allocation iteration.
+///
+/// This implementation follows the reference pykrylov implementation exactly.
 pub struct LSMRKernel<'a> {
     config: LSMRConfig,
     buffers: &'a mut LSMRBuffers,
@@ -86,7 +107,12 @@ impl<'a> LSMRKernel<'a> {
     ///
     /// # Returns
     /// `LSMRResult` with convergence information.
-    pub fn solve<A: LinearOperator>(&mut self, operator: &mut A, b: &[f64], x: &mut [f64]) -> LSMRResult {
+    pub fn solve<A: LinearOperator>(
+        &mut self,
+        operator: &mut A,
+        b: &[f64],
+        x: &mut [f64],
+    ) -> LSMRResult {
         let n_obs = operator.rows();
         let n_coef = operator.cols();
 
@@ -98,37 +124,81 @@ impl<'a> LSMRKernel<'a> {
         // Reset workspace for new solve
         self.buffers.reset();
 
-        // Initialize: beta_1 * u_1 = b
+        let damp = self.config.damp;
+        let ctol = if self.config.conlim > 0.0 {
+            1.0 / self.config.conlim
+        } else {
+            0.0
+        };
+
+        // =====================================================================
+        // Initialize the Golub-Kahan bidiagonalization process
+        // =====================================================================
+
+        // u = b, beta = ||u||
         self.buffers.u.copy_from_slice(b);
-        self.buffers.beta = norm2(&self.buffers.u);
+        self.buffers.beta = norm(&self.buffers.u);
+        self.buffers.normb = self.buffers.beta;
 
         if self.buffers.beta > 0.0 {
-            scale_inplace(&mut self.buffers.u, 1.0 / self.buffers.beta);
-        }
+            // u = u / beta
+            scale(&mut self.buffers.u, 1.0 / self.buffers.beta);
 
-        // alpha_1 * v_1 = A^T * u_1
-        operator.rmatvec(&self.buffers.u, &mut self.buffers.v);
-        self.buffers.alpha = norm2(&self.buffers.v);
+            // v = A^T * u
+            operator.rmatvec(&self.buffers.u, &mut self.buffers.v);
+            self.buffers.alpha = norm(&self.buffers.v);
+        }
 
         if self.buffers.alpha > 0.0 {
-            scale_inplace(&mut self.buffers.v, 1.0 / self.buffers.alpha);
+            // v = v / alpha
+            scale(&mut self.buffers.v, 1.0 / self.buffers.alpha);
         }
 
-        // Initialize w = v
-        self.buffers.w.copy_from_slice(&self.buffers.v);
+        // =====================================================================
+        // Initialize variables for 1st iteration
+        // =====================================================================
 
-        // Initialize scalars for QR factorization
-        self.buffers.alphabar = self.buffers.alpha; // For damped LSMR
-        self.buffers.rho_bar = self.buffers.alpha;
-        self.buffers.phi_bar = self.buffers.beta;
-        self.buffers.rnorm = self.buffers.beta;
-        self.buffers.arnorm = self.buffers.alpha * self.buffers.beta;
+        self.buffers.zetabar = self.buffers.alpha * self.buffers.beta;
+        self.buffers.alphabar = self.buffers.alpha;
+        self.buffers.rho = 1.0;
+        self.buffers.rhobar = 1.0;
+        self.buffers.cbar = 1.0;
+        self.buffers.sbar = 0.0;
 
-        // Estimate of ||A||_F (includes damp for regularized case)
-        let damp = self.config.damp;
-        self.buffers.anorm = (self.buffers.alpha * self.buffers.alpha + damp * damp).sqrt();
+        // h = v.copy()
+        self.buffers.h.copy_from_slice(&self.buffers.v);
+        // hbar = zeros (already zero from reset)
 
-        // Check for trivial case (zero RHS)
+        // =====================================================================
+        // Initialize variables for estimation of ||r||
+        // =====================================================================
+
+        self.buffers.betadd = self.buffers.beta;
+        self.buffers.betad = 0.0;
+        self.buffers.rhodold = 1.0;
+        self.buffers.tautildeold = 0.0;
+        self.buffers.thetatilde = 0.0;
+        self.buffers.zeta = 0.0;
+        self.buffers.d = 0.0;
+
+        // =====================================================================
+        // Initialize variables for estimation of ||A|| and cond(A)
+        // =====================================================================
+
+        self.buffers.normA2 = self.buffers.alpha * self.buffers.alpha;
+        self.buffers.maxrbar = 0.0;
+        self.buffers.minrbar = 1e100;
+        self.buffers.normA = self.buffers.normA2.sqrt();
+        self.buffers.condA = 1.0;
+
+        // =====================================================================
+        // Items for use in stopping rules
+        // =====================================================================
+
+        self.buffers.normr = self.buffers.beta;
+        self.buffers.normar = self.buffers.alpha * self.buffers.beta;
+
+        // Check for trivial case
         if self.buffers.beta == 0.0 {
             x.fill(0.0);
             return LSMRResult {
@@ -139,188 +209,230 @@ impl<'a> LSMRKernel<'a> {
             };
         }
 
-        // Check for immediate convergence
-        if self.buffers.arnorm == 0.0 {
+        // Exit if A'b = 0 (x = 0 is the solution)
+        if self.buffers.normar == 0.0 {
             x.fill(0.0);
             return LSMRResult {
                 iterations: 0,
                 converged: true,
-                residual_norm: self.buffers.rnorm,
+                residual_norm: self.buffers.normr,
                 atr_norm: 0.0,
             };
         }
 
+        // =====================================================================
         // Main iteration loop
-        for iter in 1..=self.config.maxiter {
-            // Bidiagonalization step
-            self.bidiagonalization_step(operator);
+        // =====================================================================
 
-            // Apply Givens rotation and update solution
-            self.qr_and_update_step();
+        let mut istop = 0;
+        let mut final_itn = 0;
 
-            // Update norms for convergence check
-            self.update_norms();
+        for itn in 1..=self.config.maxiter {
+            final_itn = itn;
+            // =================================================================
+            // Perform the next step of the bidiagonalization
+            // =================================================================
 
-            // Check convergence
-            let test1 = self.buffers.rnorm / self.buffers.beta; // ||r|| / ||b||
-            let test2 = if self.buffers.anorm * self.buffers.rnorm > 0.0 {
-                self.buffers.arnorm / (self.buffers.anorm * self.buffers.rnorm)
-            } else {
-                0.0
-            };
-
-            if test2 <= self.config.tol || test1 <= self.config.tol {
-                // Copy solution to output
-                x.copy_from_slice(&self.buffers.x);
-                return LSMRResult {
-                    iterations: iter,
-                    converged: true,
-                    residual_norm: self.buffers.rnorm,
-                    atr_norm: self.buffers.arnorm,
-                };
-            }
-
-            // Check condition number limit
-            if self.buffers.acond >= self.config.conlim {
-                x.copy_from_slice(&self.buffers.x);
-                return LSMRResult {
-                    iterations: iter,
-                    converged: false,
-                    residual_norm: self.buffers.rnorm,
-                    atr_norm: self.buffers.arnorm,
-                };
-            }
-        }
-
-        // Max iterations reached
-        x.copy_from_slice(&self.buffers.x);
-        LSMRResult {
-            iterations: self.config.maxiter,
-            converged: false,
-            residual_norm: self.buffers.rnorm,
-            atr_norm: self.buffers.arnorm,
-        }
-    }
-
-    /// One step of Golub-Kahan bidiagonalization.
-    #[inline]
-    fn bidiagonalization_step<A: LinearOperator>(&mut self, operator: &mut A) {
-        // u = A * v - alpha * u
-        operator.matvec(&self.buffers.v, &mut self.buffers.matvec_scratch);
-        for (u_i, &s_i) in self.buffers.u.iter_mut().zip(self.buffers.matvec_scratch.iter()) {
-            *u_i = s_i - self.buffers.alpha * *u_i;
-        }
-
-        // beta = ||u||
-        self.buffers.beta = norm2(&self.buffers.u);
-
-        if self.buffers.beta > 0.0 {
-            scale_inplace(&mut self.buffers.u, 1.0 / self.buffers.beta);
-
-            // Update ||A||_F estimate
-            self.buffers.anorm = (self.buffers.anorm.powi(2)
-                + self.buffers.alpha.powi(2)
-                + self.buffers.beta.powi(2))
-            .sqrt();
-
-            // v = A^T * u - beta * v
-            operator.rmatvec(&self.buffers.u, &mut self.buffers.precond_scratch);
-            for (v_i, &s_i) in self.buffers.v.iter_mut().zip(self.buffers.precond_scratch.iter()) {
-                *v_i = s_i - self.buffers.beta * *v_i;
-            }
-
-            // alpha = ||v||
-            self.buffers.alpha = norm2(&self.buffers.v);
-
-            if self.buffers.alpha > 0.0 {
-                scale_inplace(&mut self.buffers.v, 1.0 / self.buffers.alpha);
-            }
-        }
-    }
-
-    /// Apply Givens rotations and update solution estimate.
-    ///
-    /// For damped LSMR, we apply two rotations:
-    /// 1. First rotation handles damping: eliminates damp from [alphabar; damp]
-    /// 2. Second rotation: eliminates beta from the result
-    ///
-    /// When damp=0, the first rotation is identity (chat=1) and we recover
-    /// the standard LSMR algorithm.
-    #[inline]
-    fn qr_and_update_step(&mut self) {
-        let damp = self.config.damp;
-
-        // First rotation (for damping): [alphabar; damp] -> [alphahat; 0]
-        // When damp=0: chat=1, alphahat=alphabar (no change)
-        let (chat, alphahat) = if damp == 0.0 {
-            (1.0, self.buffers.alphabar)
-        } else {
-            let (c, _s, r) = sym_ortho(self.buffers.alphabar, damp);
-            (c, r)
-        };
-
-        // Second rotation: [alphahat; beta] -> [rho; 0]
-        // Use direct computation to preserve sign of alphahat
-        let rho = (alphahat * alphahat + self.buffers.beta * self.buffers.beta).sqrt();
-        let (c, s) = if rho > 1e-15 {
-            (alphahat / rho, self.buffers.beta / rho)
-        } else {
-            (1.0, 0.0)
-        };
-
-        let theta_new = s * self.buffers.alpha;
-        let rho_bar_new = -c * self.buffers.alpha;
-        let phi = c * chat * self.buffers.phi_bar;
-        let phi_bar_new = s * self.buffers.phi_bar;
-
-        // Fused update: x = x + (phi/rho)*w and w = v - (theta_new/rho)*w
-        if rho > 1e-15 {
-            let factor_x = phi / rho;
-            let factor_w = theta_new / rho;
-            for ((x_i, w_i), &v_i) in self
+            // u = A * v - alpha * u
+            operator.matvec(&self.buffers.v, &mut self.buffers.matvec_scratch);
+            let alpha_old = self.buffers.alpha;
+            for (u_i, &scratch_i) in self
                 .buffers
-                .x
+                .u
                 .iter_mut()
-                .zip(self.buffers.w.iter_mut())
-                .zip(self.buffers.v.iter())
+                .zip(self.buffers.matvec_scratch.iter())
             {
-                *x_i += factor_x * *w_i;
-                *w_i = v_i - factor_w * *w_i;
+                *u_i = scratch_i - alpha_old * *u_i;
             }
-        } else {
-            self.buffers.w.copy_from_slice(&self.buffers.v);
-        }
+            self.buffers.beta = norm(&self.buffers.u);
 
-        // Update state for next iteration
-        // alphabar carries across iterations; when damp=0, alphabar = rho_bar (with sign)
-        self.buffers.alphabar = rho_bar_new;
-        self.buffers.rho_bar = rho_bar_new;
-        self.buffers.phi_bar = phi_bar_new;
-        self.buffers.c = c;
-        self.buffers.s = s;
-    }
+            if self.buffers.beta > 0.0 {
+                scale(&mut self.buffers.u, 1.0 / self.buffers.beta);
 
-    /// Update norm estimates for convergence checking.
-    #[inline]
-    fn update_norms(&mut self) {
-        let damp = self.config.damp;
+                // v = A^T * u - beta * v
+                operator.rmatvec(&self.buffers.u, &mut self.buffers.precond_scratch);
+                let beta = self.buffers.beta;
+                for (v_i, &scratch_i) in self
+                    .buffers
+                    .v
+                    .iter_mut()
+                    .zip(self.buffers.precond_scratch.iter())
+                {
+                    *v_i = scratch_i - beta * *v_i;
+                }
+                self.buffers.alpha = norm(&self.buffers.v);
 
-        // Update ||A||_F estimate (includes damp for regularized case)
-        self.buffers.anorm = (self.buffers.anorm.powi(2)
-            + self.buffers.alpha.powi(2)
-            + self.buffers.beta.powi(2)
-            + damp * damp)
+                if self.buffers.alpha > 0.0 {
+                    scale(&mut self.buffers.v, 1.0 / self.buffers.alpha);
+                }
+            }
+
+            // At this point, beta = beta_{k+1}, alpha = alpha_{k+1}
+
+            // =================================================================
+            // Construct rotation Qhat_{k,2k+1} (for damping)
+            // =================================================================
+
+            let (chat, shat, alphahat) = sym_ortho(self.buffers.alphabar, damp);
+
+            // =================================================================
+            // Use a plane rotation (Q_i) to turn B_i to R_i
+            // =================================================================
+
+            self.buffers.rhoold = self.buffers.rho;
+            let (c, s, rho) = sym_ortho(alphahat, self.buffers.beta);
+            self.buffers.c = c;
+            self.buffers.s = s;
+            self.buffers.rho = rho;
+            let thetanew = s * self.buffers.alpha;
+            self.buffers.alphabar = c * self.buffers.alpha;
+
+            // =================================================================
+            // Use a plane rotation (Qbar_i) to turn R_i^T to R_i^bar
+            // =================================================================
+
+            self.buffers.rhobarold = self.buffers.rhobar;
+            let zetaold = self.buffers.zeta;
+            let thetabar = self.buffers.sbar * self.buffers.rho;
+            let rhotemp = self.buffers.cbar * self.buffers.rho;
+            let (cbar, sbar, rhobar) = sym_ortho(self.buffers.cbar * self.buffers.rho, thetanew);
+            self.buffers.cbar = cbar;
+            self.buffers.sbar = sbar;
+            self.buffers.rhobar = rhobar;
+            self.buffers.zeta = self.buffers.cbar * self.buffers.zetabar;
+            self.buffers.zetabar = -self.buffers.sbar * self.buffers.zetabar;
+
+            // =================================================================
+            // Update h, hbar, x
+            // =================================================================
+
+            // hbar = h - (thetabar * rho / (rhoold * rhobarold)) * hbar
+            let hbar_factor = thetabar * self.buffers.rho
+                / (self.buffers.rhoold * self.buffers.rhobarold);
+            for (hbar_i, &h_i) in self.buffers.hbar.iter_mut().zip(self.buffers.h.iter()) {
+                *hbar_i = h_i - hbar_factor * *hbar_i;
+            }
+
+            // x = x + (zeta / (rho * rhobar)) * hbar
+            let x_factor = self.buffers.zeta / (self.buffers.rho * self.buffers.rhobar);
+            for (x_i, &hbar_i) in self.buffers.x.iter_mut().zip(self.buffers.hbar.iter()) {
+                *x_i += x_factor * hbar_i;
+            }
+
+            // h = v - (thetanew / rho) * h
+            let h_factor = thetanew / self.buffers.rho;
+            for (h_i, &v_i) in self.buffers.h.iter_mut().zip(self.buffers.v.iter()) {
+                *h_i = v_i - h_factor * *h_i;
+            }
+
+            // =================================================================
+            // Estimate of ||r||
+            // =================================================================
+
+            // Apply rotation Qhat_{k,2k+1}
+            let betaacute = chat * self.buffers.betadd;
+            let betacheck = -shat * self.buffers.betadd;
+
+            // Apply rotation Q_{k,k+1}
+            let betahat = self.buffers.c * betaacute;
+            self.buffers.betadd = -self.buffers.s * betaacute;
+
+            // Apply rotation Qtilde_{k-1}
+            let thetatildeold = self.buffers.thetatilde;
+            let (ctildeold, stildeold, rhotildeold) =
+                sym_ortho(self.buffers.rhodold, thetabar);
+            self.buffers.thetatilde = stildeold * self.buffers.rhobar;
+            self.buffers.rhodold = ctildeold * self.buffers.rhobar;
+            self.buffers.betad = -stildeold * self.buffers.betad + ctildeold * betahat;
+
+            self.buffers.tautildeold =
+                (zetaold - thetatildeold * self.buffers.tautildeold) / rhotildeold;
+            let taud =
+                (self.buffers.zeta - self.buffers.thetatilde * self.buffers.tautildeold)
+                    / self.buffers.rhodold;
+            self.buffers.d += betacheck * betacheck;
+            self.buffers.normr = (self.buffers.d
+                + (self.buffers.betad - taud).powi(2)
+                + self.buffers.betadd.powi(2))
             .sqrt();
 
-        // ||r|| estimate from QR factorization
-        self.buffers.rnorm = self.buffers.phi_bar.abs();
+            // =================================================================
+            // Estimate ||A||
+            // =================================================================
 
-        // ||A^T r|| estimate
-        self.buffers.arnorm = (self.buffers.alpha * self.buffers.c.abs() * self.buffers.phi_bar).abs();
+            self.buffers.normA2 += self.buffers.beta * self.buffers.beta;
+            self.buffers.normA = self.buffers.normA2.sqrt();
+            self.buffers.normA2 += self.buffers.alpha * self.buffers.alpha;
 
-        // Condition number estimate
-        if self.buffers.anorm > 0.0 && self.buffers.rho_bar.abs() > 0.0 {
-            self.buffers.acond = self.buffers.anorm / self.buffers.rho_bar.abs();
+            // =================================================================
+            // Estimate cond(A)
+            // =================================================================
+
+            self.buffers.maxrbar = self.buffers.maxrbar.max(self.buffers.rhobarold);
+            if itn > 1 {
+                self.buffers.minrbar = self.buffers.minrbar.min(self.buffers.rhobarold);
+            }
+            self.buffers.condA = self.buffers.maxrbar.max(rhotemp)
+                / self.buffers.minrbar.min(rhotemp);
+
+            // =================================================================
+            // Test for convergence
+            // =================================================================
+
+            // Compute norms for convergence testing
+            self.buffers.normar = self.buffers.zetabar.abs();
+            let normx = norm(&self.buffers.x);
+
+            // Now use these norms to estimate certain other quantities
+            let test1 = self.buffers.normr / self.buffers.normb;
+            let test2 = self.buffers.normar / (self.buffers.normA * self.buffers.normr);
+            let test3 = 1.0 / self.buffers.condA;
+            let t1 = test1 / (1.0 + self.buffers.normA * normx / self.buffers.normb);
+            let rtol =
+                self.config.btol + self.config.atol * self.buffers.normA * normx / self.buffers.normb;
+
+            // The following tests guard against extremely small values of
+            // atol, btol or ctol. (The user may have set any or all of
+            // the parameters atol, btol, conlim to 0.)
+            if itn >= self.config.maxiter {
+                istop = 7;
+            }
+            if 1.0 + test3 <= 1.0 {
+                istop = 6;
+            }
+            if 1.0 + test2 <= 1.0 {
+                istop = 5;
+            }
+            if 1.0 + t1 <= 1.0 {
+                istop = 4;
+            }
+
+            // Allow for tolerances set by the user
+            if test3 <= ctol {
+                istop = 3;
+            }
+            if test2 <= self.config.atol {
+                istop = 2;
+            }
+            if test1 <= rtol {
+                istop = 1;
+            }
+
+            if istop > 0 {
+                break;
+            }
+        }
+
+        // Copy solution to output
+        x.copy_from_slice(&self.buffers.x);
+
+        let converged = istop != 3 && istop != 6 && istop != 7;
+
+        LSMRResult {
+            iterations: final_itn,
+            converged,
+            residual_norm: self.buffers.normr,
+            atr_norm: self.buffers.normar,
         }
     }
 }
@@ -329,7 +441,7 @@ impl<'a> LSMRKernel<'a> {
 // Utility Functions
 // =============================================================================
 
-/// Numerically stable Givens rotation.
+/// Numerically stable Givens rotation (symOrtho).
 ///
 /// Computes (c, s, r) such that:
 /// ```text
@@ -368,23 +480,16 @@ fn sym_ortho(a: f64, b: f64) -> (f64, f64, f64) {
 
 /// Compute 2-norm of a vector.
 #[inline]
-fn norm2(x: &[f64]) -> f64 {
+fn norm(x: &[f64]) -> f64 {
     x.iter().map(|&v| v * v).sum::<f64>().sqrt()
 }
 
 /// Scale vector in place: x = alpha * x.
 #[inline]
-fn scale_inplace(x: &mut [f64], alpha: f64) {
+fn scale(x: &mut [f64], alpha: f64) {
     for xi in x.iter_mut() {
         *xi *= alpha;
     }
-}
-
-/// Compute dot product of two vectors.
-#[allow(dead_code)]
-#[inline]
-fn dot(x: &[f64], y: &[f64]) -> f64 {
-    x.iter().zip(y.iter()).map(|(&a, &b)| a * b).sum()
 }
 
 #[cfg(test)]
@@ -640,6 +745,88 @@ mod tests {
         for (i, (&x_i, &e_i)) in x.iter().zip(expected.iter()).enumerate() {
             assert!(
                 (x_i - e_i).abs() < 1e-8,
+                "x[{}] = {} != expected {}",
+                i,
+                x_i,
+                e_i
+            );
+        }
+    }
+
+    /// Rectangular matrix operator for overdetermined least-squares testing
+    struct RectangularOp {
+        rows: usize,
+        cols: usize,
+        // Store as row-major: data[i * cols + j] = A[i, j]
+        data: Vec<f64>,
+    }
+
+    impl RectangularOp {
+        fn new(rows: usize, cols: usize, data: Vec<f64>) -> Self {
+            assert_eq!(data.len(), rows * cols);
+            Self { rows, cols, data }
+        }
+    }
+
+    impl LinearOperator for RectangularOp {
+        fn rows(&self) -> usize {
+            self.rows
+        }
+        fn cols(&self) -> usize {
+            self.cols
+        }
+        fn matvec(&mut self, x: &[f64], y: &mut [f64]) {
+            // y = A * x
+            for i in 0..self.rows {
+                y[i] = 0.0;
+                for j in 0..self.cols {
+                    y[i] += self.data[i * self.cols + j] * x[j];
+                }
+            }
+        }
+        fn rmatvec(&mut self, y: &[f64], x: &mut [f64]) {
+            // x = A^T * y
+            for j in 0..self.cols {
+                x[j] = 0.0;
+                for i in 0..self.rows {
+                    x[j] += self.data[i * self.cols + j] * y[i];
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_lsmr_overdetermined() {
+        // Test overdetermined system (more rows than columns)
+        // A = [[1, 0], [0, 1], [1, 1]], b = [1, 2, 4]
+        // Least squares solution minimizes ||Ax - b||²
+        let mut op = RectangularOp::new(
+            3,
+            2,
+            vec![
+                1.0, 0.0, // row 0
+                0.0, 1.0, // row 1
+                1.0, 1.0, // row 2
+            ],
+        );
+        let b = vec![1.0, 2.0, 4.0];
+        let mut x = vec![0.0; 2];
+
+        let config = LSMRConfig::default();
+        let mut buffers = LSMRBuffers::new(3, 2);
+        let mut kernel = LSMRKernel::new(config, &mut buffers);
+
+        let result = kernel.solve(&mut op, &b, &mut x);
+
+        assert!(result.converged);
+
+        // Verify solution satisfies normal equations: A^T A x = A^T b
+        // A^T A = [[2, 1], [1, 2]], A^T b = [5, 6]
+        // Solution: x = [4/3, 7/3] ≈ [1.333, 2.333]
+        let expected = [4.0 / 3.0, 7.0 / 3.0];
+        for (i, (&x_i, &e_i)) in x.iter().zip(expected.iter()).enumerate() {
+            assert!(
+                (x_i - e_i).abs() < 1e-6,
                 "x[{}] = {} != expected {}",
                 i,
                 x_i,

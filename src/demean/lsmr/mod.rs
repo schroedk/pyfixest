@@ -74,7 +74,8 @@ impl Demeaner for LSMRDemeaner<'_> {
 
         // Create kernel config from our config
         let kernel_config = KernelConfig {
-            tol: self.config.tol,
+            atol: self.config.tol,
+            btol: self.config.tol,
             maxiter: self.config.maxiter,
             conlim: 1e8,
             damp: self.config.damp,
